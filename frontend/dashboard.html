@@ -384,44 +384,113 @@
         </div>
     </div>
 
-    <!-- Main Header -->
-    <header class="header-card">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <!-- Logo & Title -->
-                <div class="flex items-center space-x-4">
-                    <div class="text-2xl">💎</div>
-                    <div>
-                        <h1 class="text-xl font-bold">Crypto Stream Overlay</h1>
-                        <p class="text-sm text-gray-300">Universal donation overlay system</p>
+    <!-- Modern ShadCN-Style Header -->
+    <header class="sticky top-0 z-50 w-full border-b border-gray-800 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/60">
+        <div class="container mx-auto px-4">
+            <div class="flex h-16 items-center justify-between">
+                
+                <!-- Logo & Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+                        <span class="text-lg">💎</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <h1 class="text-lg font-semibold leading-tight">Crypto Stream</h1>
+                        <p class="text-xs text-gray-400 leading-tight">Donation Overlay</p>
                     </div>
                 </div>
-                
-                <!-- Navigation Tabs -->
-                <nav class="flex flex-wrap sm:flex-nowrap space-x-1 bg-gray-700 rounded-lg p-1">
+
+                <!-- Desktop Navigation -->
+                <nav class="hidden md:flex items-center space-x-1">
                     <template x-for="tab in tabs" :key="tab.id">
                         <button 
                             @click="activeTab = tab.id"
-                            :class="activeTab === tab.id ? 'bg-blue-500 text-white' : 'text-gray-300 hover:text-white'"
-                            class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex-shrink-0"
-                            x-text="tab.icon + ' ' + tab.name">
+                            :class="activeTab === tab.id 
+                                ? 'bg-gray-800 text-white shadow-sm' 
+                                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'"
+                            class="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50">
+                            <span class="mr-2" x-text="tab.icon"></span>
+                            <span x-text="tab.name"></span>
                         </button>
                     </template>
                 </nav>
 
-                <!-- Status & Quick Actions -->
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <div :class="backendConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
-                        <span class="text-sm">Backend</span>
+                <!-- Desktop Status & Actions -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-1.5">
+                            <div :class="backendConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
+                            <span class="text-xs text-gray-400">Backend</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <div :class="overlayConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
+                            <span class="text-xs text-gray-400">Overlay</span>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <div :class="overlayConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
-                        <span class="text-sm">Overlay</span>
-                    </div>
-                    <button @click="showWizard = true" class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                    <button @click="showWizard = true" 
+                            class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 h-9 px-3">
                         Setup Wizard
                     </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden" x-data="{ mobileMenuOpen: false }">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen"
+                            class="inline-flex items-center justify-center whitespace-nowrap rounded-md p-2 text-gray-400 hover:bg-gray-800 hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                    </button>
+
+                    <!-- Mobile Dropdown Menu -->
+                    <div x-show="mobileMenuOpen" 
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         @click.outside="mobileMenuOpen = false"
+                         class="absolute right-4 top-full mt-2 w-56 origin-top-right rounded-md border border-gray-700 bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5">
+                        <div class="py-1">
+                            <template x-for="tab in tabs" :key="tab.id">
+                                <button @click="activeTab = tab.id; mobileMenuOpen = false"
+                                        :class="activeTab === tab.id 
+                                            ? 'bg-gray-700 text-white' 
+                                            : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                                        class="group flex w-full items-center px-4 py-3 text-sm font-medium">
+                                    <span class="mr-3" x-text="tab.icon"></span>
+                                    <span x-text="tab.name"></span>
+                                </button>
+                            </template>
+                            <div class="border-t border-gray-700 mt-2 pt-2">
+                                <div class="px-4 py-2">
+                                    <div class="flex items-center justify-between text-xs text-gray-400 mb-2">
+                                        <span>Status</span>
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex items-center space-x-1.5">
+                                            <div :class="backendConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
+                                            <span class="text-xs">Backend</span>
+                                        </div>
+                                        <div class="flex items-center space-x-1.5">
+                                            <div :class="overlayConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
+                                            <span class="text-xs">Overlay</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button @click="showWizard = true; mobileMenuOpen = false"
+                                        class="group flex w-full items-center px-4 py-3 text-sm font-medium text-blue-400 hover:bg-gray-700">
+                                    <svg class="mr-3 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    Setup Wizard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -868,7 +937,12 @@
         </div>
 
         <!-- Overlay Tab -->
-        <div x-show="activeTab === 'overlay'" x-transition:enter="animate-fade-in">
+        <div x-show="activeTab === 'overlay'" x-transition:enter="animate-fade-in" class="space-y-6">
+            <!-- Debug: Overlay Tab Active -->
+            <div class="bg-blue-500 text-white p-2 rounded" x-show="activeTab === 'overlay'">
+                Overlay tab is active! Debug: <span x-text="activeTab"></span>
+            </div>
+            
             <div class="card rounded-xl shadow-lg overflow-hidden h-[70vh]">
                 <div class="px-6 py-4 border-b border-gray-600">
                     <div class="flex items-center justify-between">
@@ -894,10 +968,14 @@
         </div>
 
         <!-- Help Tab -->
-        <div x-show="activeTab === 'help'" x-transition:enter="animate-fade-in">
-            <div class="space-y-8">
-                <!-- Quick Start Guide -->
-                <div class="card rounded-xl shadow-lg overflow-hidden">
+        <div x-show="activeTab === 'help'" x-transition:enter="animate-fade-in" class="space-y-8">
+            <!-- Debug: Help Tab Active -->
+            <div class="bg-green-500 text-white p-2 rounded" x-show="activeTab === 'help'">
+                Help tab is active! Debug: <span x-text="activeTab"></span>
+            </div>
+            
+            <!-- Quick Start Guide -->
+            <div class="card rounded-xl shadow-lg overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-600">
                         <h2 class="text-lg font-semibold text-white">🚀 Quick Start Guide</h2>
                     </div>
@@ -980,29 +1058,6 @@
                     { id: 'help', name: 'Help', icon: '❓' }
                 ],
                 
-                // FAQ data for help section
-                faqData: [
-                    {
-                        question: "How do I get a blockchain API key?",
-                        answer: "Sign up for a free account at <a href='https://helius.dev' target='_blank' class='text-blue-400 hover:underline'>Helius</a> or <a href='https://alchemy.com' target='_blank' class='text-blue-400 hover:underline'>Alchemy</a>. Create a new app and copy the API key."
-                    },
-                    {
-                        question: "What wallet address should I use?",
-                        answer: "Use your Solana wallet address where you want to receive donations. This is typically your Phantom, Solflare, or other Solana wallet address."
-                    },
-                    {
-                        question: "How do I add the overlay to OBS?",
-                        answer: "In OBS, add a new Browser Source, paste the overlay URL from the Preview tab, set dimensions to 1920x1080, and enable 'Control audio via OBS'."
-                    },
-                    {
-                        question: "Why aren't donations showing up?",
-                        answer: "Check that your API key is valid, your wallet address is correct, and the backend server is running. Try demo mode first to test the overlay."
-                    },
-                    {
-                        question: "How do I test the overlay?",
-                        answer: "Add <code>?demo=true</code> to your overlay URL to see test donations, or use the 'Simulate Test Donation' button in the dashboard."
-                    }
-                ],
                 
                 // Token presets (will be loaded from backend)
                 tokenPresets: [],
@@ -1428,12 +1483,6 @@
                     }
                 },
 
-
-                    } catch (error) {
-                        this.showToast('Error clearing events', 'error');
-                    }
-                },
-
                 async refreshData() {
                     await this.loadInitialData();
                     this.showToast('Data refreshed', 'success');
@@ -1533,17 +1582,6 @@
                     return preset ? preset.network : 'Custom';
                 },
 
-                generateOverlayUrl() {
-                    const params = new URLSearchParams({
-                        token: this.settings.tokenSymbol,
-                        position: this.settings.position,
-                        duration: this.settings.displayDuration * 1000,
-                        theme: this.settings.theme,
-                        host: 'localhost',
-                        port: '8000'
-                    });
-                    return `${window.location.origin}/overlay.html?${params.toString()}`;
-                },
 
                 copyOverlayUrl() {
                     this.copyToClipboard(this.generateOverlayUrl(), 'Overlay URL');
@@ -1799,6 +1837,98 @@
         .btn-success svg, .btn-primary svg, .btn-danger svg, .btn-warning svg {
             flex-shrink: 0;
             margin-right: 0.5rem;
+        }
+        
+        /* Mobile Navigation Scrolling */
+        .scrollbar-hide {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            /* Touch-friendly navigation */
+            .nav-tab-mobile {
+                touch-action: manipulation;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            /* Button touch targets */
+            .btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-warning {
+                min-height: 44px;
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
+            }
+            
+            .btn-copy {
+                min-height: 36px;
+                padding: 0.5rem 0.75rem;
+            }
+            
+            /* Card spacing */
+            .card .px-6 { 
+                padding-left: 1rem; 
+                padding-right: 1rem; 
+            }
+            
+            .card .py-4 { 
+                padding-top: 0.75rem; 
+                padding-bottom: 0.75rem; 
+            }
+            
+            /* Form inputs */
+            .wizard-input {
+                padding: 1rem;
+                font-size: 1rem; /* Prevent zoom on iOS */
+            }
+        }
+        
+        @media (max-width: 640px) {
+            /* Typography scaling */
+            h1 { font-size: 1.125rem; }
+            h2 { font-size: 1rem; }
+            h3 { font-size: 0.875rem; }
+            
+            /* Stack wizard buttons vertically on small screens */
+            .wizard-buttons {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .wizard-buttons button {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            /* Better mobile spacing */
+            .space-y-8 > :not(:first-child) {
+                margin-top: 1.5rem;
+            }
+            
+            .gap-8 {
+                gap: 1.5rem;
+            }
+        }
+        
+        /* Tablet specific optimizations */
+        @media (min-width: 640px) and (max-width: 1024px) {
+            /* Adjust grid layouts for tablet */
+            .grid-cols-1.lg\\:grid-cols-2 {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+            
+            @media (min-width: 768px) {
+                .grid-cols-1.lg\\:grid-cols-2 {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
         }
     </style>
 </body>
