@@ -18,13 +18,13 @@ from dotenv import load_dotenv
 try:
     from .database import (
         init_db, create_event, get_pending_events, 
-        approve_event, skip_event, clear_events, is_memo_banned
+        approve_event, skip_event, is_memo_banned
     )
     from .listener import start_listener_task
 except ImportError:
     from database import (
         init_db, create_event, get_pending_events,
-        approve_event, skip_event, clear_events, is_memo_banned
+        approve_event, skip_event, is_memo_banned
     )
     try:
         from listener import start_listener_task
@@ -103,12 +103,6 @@ async def moderate_event(action: EventAction):
     
     return {"success": False, "error": "Invalid action or event not found"}
 
-@app.delete("/api/events")
-async def clear_all_events():
-    """Clear all events."""
-    count = clear_events()
-    await broadcast_to_dashboard({"type": "events_cleared", "count": count})
-    return {"success": True, "cleared": count}
 
 def get_token_metadata_from_helius(mint_address: str) -> Optional[Dict[str, Any]]:
     """Fetch token metadata from Helius DAS API and cache it."""
