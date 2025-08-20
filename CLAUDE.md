@@ -4,141 +4,153 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is an AI16Z Memo Overlay project - a browser-based OBS overlay that displays memo messages from AI16Z token transfers on Solana. The project consists of a zero-install frontend with an optional FastAPI backend for moderated flows.
+This is an AI16Z Memo Overlay project - a browser-based OBS overlay that displays memo messages from AI16Z token transfers on Solana. The project consists of a zero-install frontend with a FastAPI backend for real-time message delivery.
 
 ## Project Structure
 
 The project is organized into two main components:
 
-- **memo_overlay/frontend/** - Browser-based overlay (ES modules, no build step required)
-- **memo_overlay/backend/** - Optional FastAPI backend for WebSocket and moderated flows
+- **frontend/** - Browser-based overlay (single HTML file, no build step required)
+- **backend/** - FastAPI backend with WebSocket support and SQLite database
 
 ## Frontend Architecture
 
 ### Core Technologies
-- Vanilla JavaScript with ES6 modules (no bundler/transpilation)
+- Single HTML file with embedded CSS and JavaScript
 - Direct browser deployment via simple HTTP server
-- Modular architecture under `frontend/js/`
+- WebSocket client for real-time communication with backend
+- URL parameter-based configuration
 
-### Module Structure
-- **boot.js** - Entry point that initializes the main module
-- **main.js** - Core overlay logic, queue management, and display coordination
-- **config.js** - Configuration loading from JSON files and URL parameters
-- **helius.js** - Solana blockchain interaction via Helius API (RPC calls, memo extraction, token amount parsing)
-- **positioning.js** - CSS positioning and offset management for overlay elements
-- **media.js** - Dynamic media handling (images/videos) with tier-based overrides  
-- **audio.js** - Text-to-speech and sound effects with browser audio unlock handling
-- **demo.js** - Test/demo mode with fake transaction generation
-- **utils.js** - Shared utilities (JSON loading, DOM helpers, string formatting)
-- **constants.js** - Default configuration and API endpoints
+### File Structure
+- **overlay.html** - Main overlay display with embedded JavaScript for WebSocket communication, message display, and audio handling
+- **dashboard.html** - Admin dashboard for moderation (embedded JavaScript for WebSocket management and approval/rejection interface)
+- **media/** - Static assets (alert.gif, notification.mp3)
 
 ### Configuration System
-- **settings.json** - Display settings, positioning, media, tiers, and behavior config
-- **keys.json** - API credentials (Helius API key, wallet address, mint address)
-- URL parameter overrides supported for all settings
-- Auto-detection of live vs demo mode based on placeholder key detection
+- URL parameters for all configuration (host, demo mode, audio settings, positioning)
+- Environment variables via backend (.env file)
+- Hard-coded defaults with URL parameter overrides
+- No separate config files - all configuration via URL parameters
 
 ### Display System
-- Queue-based message display with toast notifications
+- WebSocket-based real-time message display
 - Tier-based styling (low/mid/high/whale) with amount thresholds
-- Per-tier media overrides (GIFs, videos with different properties)
-- TTS and SFX integration with audio unlock patterns
+- Integrated audio with text-to-speech and sound effects
+- Toast notification system with CSS animations
 
 ## Backend Architecture
 
 ### Core Technologies
 - FastAPI with async/await patterns
+- SQLite database with SQLAlchemy ORM
 - WebSocket support for real-time communication
-- Optional listener integration for blockchain monitoring
+- Helius API integration for Solana blockchain monitoring
 
 ### Components
-- **main.py** - FastAPI application with WebSocket endpoints and health checks
-- **listener.py** - Blockchain monitoring task (referenced but implementation varies)
+- **main.py** - FastAPI application with WebSocket endpoints, health checks, and moderation API
+- **listener.py** - Blockchain monitoring service that fetches transactions and processes memos
+- **models.py** - SQLAlchemy database models for donation tracking and moderation
 
 ### API Design
 - Health check endpoint at `/health`
 - WebSocket endpoint at `/ws` for real-time updates
+- Admin dashboard endpoints for moderation
 - CORS enabled for cross-origin frontend communication
+- SQLite database for persistent storage
 
 ## Common Development Tasks
 
 ### Frontend Development
 ```bash
 # Serve frontend locally
-cd memo_overlay/frontend
-python -m http.server 5500
-# Access at http://localhost:5500/index.html
+cd frontend
+python -m http.server 8000
+# Access at http://localhost:8000/overlay.html
 ```
 
 ### Backend Development  
 ```bash
 # Set up Python environment
-cd memo_overlay/backend
+cd backend
 python -m venv .venv
 source .venv/bin/activate  # or .venv/Scripts/activate on Windows
 pip install -r requirements.txt
+
+# Copy environment template
+cp .env.example .env
+# Edit .env with your API keys and configuration
 
 # Run development server
 uvicorn main:app --reload --port 8765
 ```
 
 ### Configuration Setup
-1. Copy configuration templates and customize:
-   - Create `keys.json` with real API credentials for live mode
-   - Modify `settings.json` for display preferences and behavior
-   - Use placeholder values in `keys.json` for demo/test mode
+1. Backend configuration via .env file:
+   - Copy `.env.example` to `.env`
+   - Set `HELIUS_API_KEY` for blockchain monitoring
+   - Configure `AI16Z_WALLET_ADDRESS` and `AI16Z_MINT_ADDRESS`
+   - Set database and server configuration
+
+2. Frontend configuration via URL parameters:
+   - `?demo=true` - Enable demo mode with test messages
+   - `?host=localhost` - Set WebSocket host
+   - `?audio=false` - Disable audio
+   - See overlay.html for full parameter list
 
 ### OBS Integration
-- Add Browser Source pointing to frontend URL
+- Add Browser Source pointing to frontend URL: `http://localhost:8000/overlay.html`
 - Enable "Refresh browser when scene becomes active"
 - For audio: enable "Control audio via OBS" and unmute in mixer
-- Set canvas dimensions to match overlay requirements
+- Set canvas dimensions to match overlay requirements (typically 1920x1080)
 
 ## Key Implementation Patterns
 
-### Modular ES6 Architecture
-- No build step required - files are served directly
-- Import/export pattern for clean module boundaries
-- Dynamic imports for optional functionality
+### Single-File Architecture
+- No build step required - HTML files are served directly
+- Embedded CSS and JavaScript in HTML files for zero dependencies
+- URL parameter-based configuration system
 
 ### Configuration-Driven Behavior
-- JSON-based configuration with URL parameter overrides
-- Runtime detection of live vs demo mode
-- Tier-based theming and media selection
+- URL parameter overrides for all settings
+- Environment variable configuration for backend
+- Demo mode vs live mode switching
+- Tier-based styling and behavior
 
 ### Blockchain Integration
 - Helius API for Solana RPC and enhanced transaction data
 - Token transfer parsing with memo extraction
-- Associated Token Account (ATA) resolution
-- Deduplication and state management for real-time updates
+- SQLite database for persistent storage and moderation queue
+- Real-time WebSocket updates from backend listener
 
 ### Audio Management
 - Browser audio context unlocking via user gestures
-- TTS integration with tier-based voice selection
-- Sound effects coordination with visual animations
+- Text-to-speech integration with configurable voices
+- Sound effects coordination with visual notifications
 
-### Real-time Display
-- Queue-based processing with configurable timing
-- Toast notification system with CSS transitions  
-- Position management for multiple simultaneous elements
+### Real-time Communication
+- WebSocket-based message delivery from backend to frontend
+- Moderation queue with approval/rejection workflow
+- Dashboard interface for real-time content moderation
 
 ## Development Workflow
 
 ### Live Mode Testing
-1. Configure real Helius API key and wallet address in `keys.json`
-2. Set `live: true` in `settings.json` or let auto-detection handle it
-3. Monitor real blockchain transactions and memo displays
+1. Configure backend with real Helius API key in `.env`
+2. Set correct wallet and mint addresses in `.env`
+3. Start backend and frontend servers
+4. Monitor real blockchain transactions and memo displays
 
 ### Demo Mode Testing  
-1. Use placeholder values in `keys.json` (e.g., `YOUR_API_KEY`)
-2. Enable demo controls via `settings.json` or URL parameters
-3. Use test controls to simulate various transaction scenarios
+1. Access overlay with `?demo=true` parameter
+2. Use demo mode to test display, audio, and positioning
+3. Test moderation workflow via dashboard
 
-### Moderated Flow (Planned)
-Reference `MODERATED_FLOW.md` for planned architecture that adds:
-- Backend moderation queue with approval/rejection workflow
-- Streamer dashboard for real-time moderation
+### Moderated Flow
+The current implementation includes:
+- Backend moderation queue with SQLite database
+- Admin dashboard at `/dashboard.html` for approval/rejection
 - WebSocket-based approved content delivery to overlay
+- Configurable content filtering and tier-based display
 
 ## Build Tools Integration
 
