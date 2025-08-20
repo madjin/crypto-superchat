@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay Test Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1, h2 {
+            margin-bottom: 16px;
+            color: #111827;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .connected { background: #10b981; }
+        .disconnected { background: #ef4444; }
+        
+        .test-section {
+            margin-bottom: 24px;
+        }
+        
+        .test-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+        }
+        
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        button:hover { background: #3730a3; transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+        
+        .tier-low { background: #10b981; }
+        .tier-low:hover { background: #059669; }
+        
+        .tier-mid { background: #3b82f6; }
+        .tier-mid:hover { background: #2563eb; }
+        
+        .tier-high { background: #a855f7; }
+        .tier-high:hover { background: #9333ea; }
+        
+        .tier-whale { background: #f59e0b; }
+        .tier-whale:hover { background: #d97706; }
+        
+        .custom-donation {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        input, textarea {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        textarea {
+            grid-column: 1 / -1;
+            resize: vertical;
+            height: 80px;
+        }
+        
+        .logs {
+            background: #111827;
+            color: #f9fafb;
+            padding: 16px;
+            border-radius: 8px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .overlay-preview {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f9fafb;
+            color: #6b7280;
+        }
+        
+        .quick-links {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .quick-links a {
+            color: #4f46e5;
+            text-decoration: none;
+            padding: 8px 12px;
+            border: 1px solid #4f46e5;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .quick-links a:hover {
+            background: #4f46e5;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>Backend Connection</h2>
+            
+            <div class="status">
+                <div class="status-dot disconnected" id="status-dot"></div>
+                <span id="status-text">Connecting...</span>
+            </div>
+            
+            <div class="quick-links">
+                <a href="overlay.html?demo=true" target="_blank">Open Demo Overlay</a>
+                <a href="overlay.html?debug=true" target="_blank">Open Debug Overlay</a>
+                <a href="http://localhost:8000/docs" target="_blank">API Docs</a>
+            </div>
+            
+            <div class="test-section">
+                <h3>Preset Donations</h3>
+                <div class="test-buttons">
+                    <button class="tier-low" onclick="sendTestDonation('low')">Low Tier ($500)</button>
+                    <button class="tier-mid" onclick="sendTestDonation('mid')">Mid Tier ($5K)</button>
+                    <button class="tier-high" onclick="sendTestDonation('high')">High Tier ($25K)</button>
+                    <button class="tier-whale" onclick="sendTestDonation('whale')">Whale ($150K)</button>
+                </div>
+            </div>
+            
+            <div class="test-section">
+                <h3>Custom Donation</h3>
+                <div class="custom-donation">
+                    <input type="number" id="custom-amount" placeholder="Amount" value="1000">
+                    <input type="text" id="custom-sender" placeholder="Sender address" value="TestWallet123">
+                    <textarea id="custom-memo" placeholder="Donation message">Thanks for the great stream!</textarea>
+                    <button onclick="sendCustomDonation()">Send Custom Donation</button>
+                    <button onclick="clearPendingEvents()">Clear All Events</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Activity Log</h2>
+            <div class="logs" id="activity-log">
+                <div>🚀 Test dashboard starting...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TestDashboard {
+            constructor() {
+                this.ws = null;
+                this.logElement = document.getElementById('activity-log');
+                this.statusDot = document.getElementById('status-dot');
+                this.statusText = document.getElementById('status-text');
+                
+                this.connect();
+                this.setupEventHandlers();
+            }
+            
+            connect() {
+                const wsUrl = `ws://localhost:8000/ws/dashboard`;
+                this.log(`Connecting to: ${wsUrl}`);
+                
+                this.ws = new WebSocket(wsUrl);
+                
+                this.ws.onopen = () => {
+                    this.log('✅ Connected to dashboard WebSocket');
+                    this.updateStatus(true);
+                };
+                
+                this.ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    this.log(`📨 Received: ${JSON.stringify(data, null, 2)}`);
+                };
+                
+                this.ws.onclose = () => {
+                    this.log('❌ WebSocket disconnected');
+                    this.updateStatus(false);
+                    setTimeout(() => this.connect(), 3000);
+                };
+                
+                this.ws.onerror = (error) => {
+                    this.log(`🚨 WebSocket error: ${error}`);
+                    this.updateStatus(false);
+                };
+            }
+            
+            async sendTestDonation(tier) {
+                const donations = {
+                    low: { amount: 500, memo: "Small but heartfelt donation!" },
+                    mid: { amount: 5000, memo: "Love your content, keep it up!" },
+                    high: { amount: 25000, memo: "Amazing stream, take my money!" },
+                    whale: { amount: 150000, memo: "🐋 WHALE DONATION! You deserve it!" }
+                };
+                
+                const donation = donations[tier];
+                const signature = `test-${tier}-${Date.now()}`;
+                
+                try {
+                    // First create the event in backend
+                    const createResponse = await this.createDonationEvent({
+                        signature,
+                        sender: `${tier}Wallet${Math.random().toString(36).slice(2, 8)}`,
+                        amount: donation.amount,
+                        memo: donation.memo,
+                        tier
+                    });
+                    
+                    if (createResponse.ok) {
+                        // Then approve it to trigger overlay display
+                        const approveResponse = await fetch('http://localhost:8000/api/events/action', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                event_id: signature,
+                                action: 'approve'
+                            })
+                        });
+                        
+                        if (approveResponse.ok) {
+                            this.log(`✅ Sent ${tier} tier donation: $${donation.amount.toLocaleString()}`);
+                        } else {
+                            this.log(`❌ Failed to approve donation: ${approveResponse.status}`);
+                        }
+                    } else {
+                        this.log(`❌ Failed to create donation: ${createResponse.status}`);
+                    }
+                    
+                } catch (error) {
+                    this.log(`🚨 Error sending donation: ${error.message}`);
+                }
+            }
+            
+            async createDonationEvent(eventData) {
+                // Simulate the listener creating an event
+                return fetch('http://localhost:8000/api/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(eventData)
+                });
+            }
+            
+            async sendCustomDonation() {
+                const amount = parseFloat(document.getElementById('custom-amount').value) || 1000;
+                const sender = document.getElementById('custom-sender').value || 'CustomWallet';
+                const memo = document.getElementById('custom-memo').value || 'Custom donation message';
+                
+                // Determine tier based on amount
+                let tier = 'low';
+                if (amount >= 100000) tier = 'whale';
+                else if (amount >= 10000) tier = 'high';
+                else if (amount >= 1000) tier = 'mid';
+                
+                const signature = `custom-${Date.now()}`;
+                
+                try {
+                    const createResponse = await this.createDonationEvent({
+                        signature,
+                        sender,
+                        amount,
+                        memo,
+                        tier
+                    });
+                    
+                    if (createResponse.ok) {
+                        const approveResponse = await fetch('http://localhost:8000/api/events/action', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                event_id: signature,
+                                action: 'approve'
+                            })
+                        });
+                        
+                        if (approveResponse.ok) {
+                            this.log(`✅ Sent custom donation: $${amount.toLocaleString()} - "${memo}"`);
+                        }
+                    }
+                } catch (error) {
+                    this.log(`🚨 Error sending custom donation: ${error.message}`);
+                }
+            }
+            
+            async clearPendingEvents() {
+                try {
+                    const response = await fetch('http://localhost:8000/api/events', {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        this.log(`🧹 Cleared ${result.cleared} events`);
+                    }
+                } catch (error) {
+                    this.log(`🚨 Error clearing events: ${error.message}`);
+                }
+            }
+            
+            updateStatus(connected) {
+                if (connected) {
+                    this.statusDot.className = 'status-dot connected';
+                    this.statusText.textContent = 'Connected to Backend';
+                } else {
+                    this.statusDot.className = 'status-dot disconnected';
+                    this.statusText.textContent = 'Disconnected';
+                }
+            }
+            
+            log(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logLine = `[${timestamp}] ${message}`;
+                console.log(logLine);
+                
+                const logDiv = document.createElement('div');
+                logDiv.textContent = logLine;
+                this.logElement.appendChild(logDiv);
+                this.logElement.scrollTop = this.logElement.scrollHeight;
+            }
+            
+            setupEventHandlers() {
+                // Add global functions for button clicks
+                window.sendTestDonation = (tier) => this.sendTestDonation(tier);
+                window.sendCustomDonation = () => this.sendCustomDonation();
+                window.clearPendingEvents = () => this.clearPendingEvents();
+            }
+        }
+        
+        // Initialize dashboard when page loads
+        window.addEventListener('load', () => {
+            new TestDashboard();
+        });
+    </script>
+</body>
+</html>

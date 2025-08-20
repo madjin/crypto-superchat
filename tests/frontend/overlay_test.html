@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay Test - AI16Z Stream</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .test-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            color: #718096;
+        }
+        
+        .overlay-frame {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border: 3px solid #e2e8f0;
+            border-radius: 12px;
+            background: #1a1a1a;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .overlay-frame iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .control-group h3 {
+            color: #2d3748;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        button {
+            width: 100%;
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+        
+        button:hover {
+            background: #3182ce;
+            transform: translateY(-1px);
+        }
+        
+        button:last-child {
+            margin-bottom: 0;
+        }
+        
+        .tier-low { background: #48bb78; }
+        .tier-low:hover { background: #38a169; }
+        
+        .tier-mid { background: #4299e1; }
+        .tier-mid:hover { background: #3182ce; }
+        
+        .tier-high { background: #9f7aea; }
+        .tier-high:hover { background: #805ad5; }
+        
+        .tier-whale { background: #ed8936; }
+        .tier-whale:hover { background: #dd6b20; }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            background: #fed7d7;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .status-indicator.connected {
+            background: #c6f6d5;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f56565;
+        }
+        
+        .status-indicator.connected .status-dot {
+            background: #48bb78;
+        }
+        
+        .instructions {
+            background: #ebf8ff;
+            border: 2px solid #bee3f8;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .instructions h3 {
+            color: #2b6cb0;
+            margin-bottom: 12px;
+        }
+        
+        .instructions ul {
+            color: #2c5aa0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="header">
+            <h1>🎮 Overlay Test Environment</h1>
+            <p>Test your stream overlay before going live</p>
+        </div>
+        
+        <div class="status-indicator" id="status-indicator">
+            <div class="status-dot"></div>
+            <span id="status-text">Checking backend connection...</span>
+        </div>
+        
+        <div class="overlay-frame">
+            <iframe id="overlay-frame" src="../../frontend/overlay.html?debug=true"></iframe>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <h3>Quick Test Donations</h3>
+                <button class="tier-low" onclick="testDonation('low')">Low Tier ($500)</button>
+                <button class="tier-mid" onclick="testDonation('mid')">Mid Tier ($5K)</button>
+                <button class="tier-high" onclick="testDonation('high')">High Tier ($25K)</button>
+                <button class="tier-whale" onclick="testDonation('whale')">Whale ($150K)</button>
+            </div>
+            
+            <div class="control-group">
+                <h3>Overlay Modes</h3>
+                <button onclick="switchMode('demo')">Demo Mode</button>
+                <button onclick="switchMode('debug')">Debug Mode</button>
+                <button onclick="switchMode('production')">Production Mode</button>
+                <button onclick="switchMode('obs')">OBS Mode</button>
+            </div>
+            
+            <div class="control-group">
+                <h3>Test Controls</h3>
+                <button onclick="testConnection()">Test Connection</button>
+                <button onclick="clearEvents()">Clear All Events</button>
+                <button onclick="openDashboard()">Open Dashboard</button>
+                <button onclick="openDocs()">API Docs</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 How to Use This Test Environment</h3>
+            <ul>
+                <li><strong>Quick Test:</strong> Click any donation button to see overlay animation</li>
+                <li><strong>Mode Testing:</strong> Switch between different overlay modes</li>
+                <li><strong>Backend Required:</strong> Make sure your backend is running on port 8000</li>
+                <li><strong>OBS Setup:</strong> Use "OBS Mode" to test how it looks in OBS Studio</li>
+                <li><strong>Production:</strong> Use "Production Mode" to test final setup</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isConnected = false;
+        
+        const donations = {
+            low: { amount: 500, memo: "Thanks for the great stream!" },
+            mid: { amount: 5000, memo: "Love your content, keep it up!" },
+            high: { amount: 25000, memo: "Amazing work, take my money!" },
+            whale: { amount: 150000, memo: "🐋 WHALE DONATION! You're awesome!" }
+        };
+        
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            
+            isConnected = connected;
+            
+            if (connected) {
+                indicator.className = 'status-indicator connected';
+                statusText.textContent = 'Connected to backend - Ready to test!';
+            } else {
+                indicator.className = 'status-indicator';
+                statusText.textContent = 'Backend not connected - Start backend server';
+            }
+        }
+        
+        async function checkBackendConnection() {
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                if (response.ok) {
+                    updateConnectionStatus(true);
+                    return true;
+                } else {
+                    updateConnectionStatus(false);
+                    return false;
+                }
+            } catch (error) {
+                updateConnectionStatus(false);
+                return false;
+            }
+        }
+        
+        async function testDonation(tier) {
+            if (!isConnected) {
+                alert('Backend not connected! Please start the backend server first.');
+                return;
+            }
+            
+            const donation = donations[tier];
+            const signature = `test-${tier}-${Date.now()}`;
+            
+            try {
+                // Send message directly to overlay iframe
+                const iframe = document.getElementById('overlay-frame');
+                const overlayWindow = iframe.contentWindow;
+                
+                // Post message to overlay
+                overlayWindow.postMessage({
+                    type: 'test_donation',
+                    event: {
+                        id: signature,
+                        signature: signature,
+                        sender: `${tier}TestWallet${Math.random().toString(36).slice(2, 8)}`,
+                        amount: donation.amount,
+                        memo: donation.memo,
+                        tier: tier,
+                        created_at: Math.floor(Date.now() / 1000)
+                    }
+                }, '*');
+                
+                console.log(`Sent ${tier} tier test donation`);
+                
+            } catch (error) {
+                console.error('Error sending test donation:', error);
+                alert('Error sending test donation. Check console for details.');
+            }
+        }
+        
+        function switchMode(mode) {
+            const iframe = document.getElementById('overlay-frame');
+            let url = '../../frontend/overlay.html';
+            
+            switch(mode) {
+                case 'demo':
+                    url += '?demo=true&debug=true';
+                    break;
+                case 'debug':
+                    url += '?debug=true';
+                    break;
+                case 'production':
+                    url += '?host=localhost&port=8000';
+                    break;
+                case 'obs':
+                    url += '?obs=true&host=localhost&port=8000';
+                    break;
+            }
+            
+            iframe.src = url;
+            console.log(`Switched to ${mode} mode: ${url}`);
+        }
+        
+        async function testConnection() {
+            const connected = await checkBackendConnection();
+            if (connected) {
+                alert('✅ Backend connection successful!');
+            } else {
+                alert('❌ Cannot connect to backend.\n\nStart backend with:\ncd backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload');
+            }
+        }
+        
+        async function clearEvents() {
+            if (!isConnected) {
+                alert('Backend not connected!');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/events', {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(`✅ Cleared ${result.cleared} events`);
+                } else {
+                    alert('❌ Failed to clear events');
+                }
+            } catch (error) {
+                alert('Error clearing events: ' + error.message);
+            }
+        }
+        
+        function openDashboard() {
+            window.open('simple_dashboard.html', '_blank');
+        }
+        
+        function openDocs() {
+            window.open('http://localhost:8000/docs', '_blank');
+        }
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            console.log('🧪 Overlay Test Environment loaded');
+            checkBackendConnection();
+            
+            // Check connection every 30 seconds
+            setInterval(checkBackendConnection, 30000);
+        });
+        
+        // Listen for messages from overlay iframe
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'overlay_ready') {
+                console.log('✅ Overlay iframe is ready');
+            }
+        });
+    </script>
+</body>
+</html>

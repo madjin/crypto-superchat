@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+        
+        .status-dot.connected {
+            background: #10b981;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #2d3748;
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+        
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        button {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .tier-low { background: #10b981; }
+        .tier-mid { background: #3b82f6; }
+        .tier-high { background: #8b5cf6; }
+        .tier-whale { background: #f59e0b; }
+        
+        .pending-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .pending-item {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .pending-content {
+            flex: 1;
+        }
+        
+        .pending-memo {
+            font-weight: 500;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+        
+        .pending-meta {
+            font-size: 12px;
+            color: #718096;
+        }
+        
+        .pending-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-approve {
+            background: #10b981;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .btn-skip {
+            background: #ef4444;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .log {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎛️ Simple Test Dashboard</h1>
+            <p>Manage donations and test the overlay system</p>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-dot" id="backend-status"></div>
+                <span>Backend</span>
+            </div>
+            <div class="status-item">
+                <div class="status-dot" id="overlay-status"></div>
+                <span>Overlay</span>
+            </div>
+            <div class="status-item">
+                <span>Pending: <strong id="pending-count">0</strong></span>
+            </div>
+            <div class="status-item">
+                <button onclick="refreshData()">🔄 Refresh</button>
+            </div>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>Send Test Donations</h2>
+                
+                <div class="input-group">
+                    <input type="number" id="amount-input" placeholder="Amount" value="5000">
+                    <input type="text" id="memo-input" placeholder="Donation message" value="Test donation!">
+                </div>
+                
+                <div class="button-grid">
+                    <button class="tier-low" onclick="sendDonation('low', 500)">Low ($500)</button>
+                    <button class="tier-mid" onclick="sendDonation('mid', 5000)">Mid ($5K)</button>
+                    <button class="tier-high" onclick="sendDonation('high', 25000)">High ($25K)</button>
+                    <button class="tier-whale" onclick="sendDonation('whale', 150000)">Whale ($150K)</button>
+                </div>
+                
+                <div class="button-grid" style="margin-top: 12px;">
+                    <button onclick="sendCustomDonation()">Send Custom</button>
+                    <button onclick="clearAllEvents()" style="background: #ef4444;">Clear All</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Pending Events</h2>
+                <div class="pending-list" id="pending-list">
+                    <p style="color: #718096; text-align: center;">No pending events</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" style="margin-top: 20px;">
+            <h2>Activity Log</h2>
+            <div class="log" id="activity-log">
+                <div>[Loading] Starting simple dashboard...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SimpleDashboard {
+            constructor() {
+                this.backendConnected = false;
+                this.overlayConnected = false;
+                this.pendingEvents = [];
+                this.logElement = document.getElementById('activity-log');
+                
+                this.init();
+            }
+            
+            async init() {
+                this.log('🚀 Simple Dashboard starting...');
+                await this.checkBackend();
+                this.setupPeriodicRefresh();
+            }
+            
+            async checkBackend() {
+                try {
+                    const response = await fetch('http://localhost:8000/health');
+                    if (response.ok) {
+                        this.backendConnected = true;
+                        this.log('✅ Backend connected');
+                        await this.loadPendingEvents();
+                    } else {
+                        this.backendConnected = false;
+                        this.log('❌ Backend health check failed');
+                    }
+                } catch (error) {
+                    this.backendConnected = false;
+                    this.log('❌ Cannot connect to backend');
+                }
+                
+                this.updateStatus();
+            }
+            
+            async loadPendingEvents() {
+                try {
+                    const response = await fetch('http://localhost:8000/api/events/pending');
+                    if (response.ok) {
+                        this.pendingEvents = await response.json();
+                        this.renderPendingEvents();
+                        this.log(`📊 Loaded ${this.pendingEvents.length} pending events`);
+                    }
+                } catch (error) {
+                    this.log(`❌ Error loading pending events: ${error.message}`);
+                }
+            }
+            
+            renderPendingEvents() {
+                const container = document.getElementById('pending-list');
+                const countElement = document.getElementById('pending-count');
+                
+                countElement.textContent = this.pendingEvents.length;
+                
+                if (this.pendingEvents.length === 0) {
+                    container.innerHTML = '<p style="color: #718096; text-align: center;">No pending events</p>';
+                    return;
+                }
+                
+                container.innerHTML = this.pendingEvents.map(event => `
+                    <div class="pending-item">
+                        <div class="pending-content">
+                            <div class="pending-memo">${event.memo.slice(0, 50)}...</div>
+                            <div class="pending-meta">$${event.amount.toLocaleString()} • ${event.tier} • ${event.sender.slice(0, 8)}...</div>
+                        </div>
+                        <div class="pending-actions">
+                            <button class="btn-approve" onclick="dashboard.approveEvent('${event.id}')">✓ Approve</button>
+                            <button class="btn-skip" onclick="dashboard.skipEvent('${event.id}')">✗ Skip</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            async sendDonation(tier, amount) {
+                const memoInput = document.getElementById('memo-input');
+                const memo = memoInput.value || `${tier} tier test donation!`;
+                
+                const eventData = {
+                    signature: `test-${tier}-${Date.now()}`,
+                    sender: `${tier}Wallet${Math.random().toString(36).slice(2, 8)}`,
+                    amount: amount,
+                    memo: memo,
+                    tier: tier
+                };
+                
+                await this.createDonation(eventData);
+            }
+            
+            async sendCustomDonation() {
+                const amountInput = document.getElementById('amount-input');
+                const memoInput = document.getElementById('memo-input');
+                
+                const amount = parseFloat(amountInput.value) || 1000;
+                const memo = memoInput.value || 'Custom test donation';
+                
+                // Determine tier
+                let tier = 'low';
+                if (amount >= 100000) tier = 'whale';
+                else if (amount >= 10000) tier = 'high';
+                else if (amount >= 1000) tier = 'mid';
+                
+                const eventData = {
+                    signature: `custom-${Date.now()}`,
+                    sender: `CustomWallet${Math.random().toString(36).slice(2, 8)}`,
+                    amount: amount,
+                    memo: memo,
+                    tier: tier
+                };
+                
+                await this.createDonation(eventData);
+            }
+            
+            async createDonation(eventData) {
+                if (!this.backendConnected) {
+                    alert('Backend not connected!');
+                    return;
+                }
+                
+                try {
+                    // Simulate the backend's handle_new_donation function
+                    // In real system, this would come from blockchain listener
+                    this.log(`💰 Creating ${eventData.tier} donation: $${eventData.amount.toLocaleString()}`);
+                    
+                    // For now, just add to pending list (backend would handle this)
+                    const fakeEvent = {
+                        id: eventData.signature,
+                        signature: eventData.signature,
+                        sender: eventData.sender,
+                        amount: eventData.amount,
+                        memo: eventData.memo,
+                        tier: eventData.tier,
+                        status: 'pending',
+                        created_at: Math.floor(Date.now() / 1000),
+                        auto_filtered: false
+                    };
+                    
+                    this.pendingEvents.unshift(fakeEvent);
+                    this.renderPendingEvents();
+                    
+                } catch (error) {
+                    this.log(`❌ Error creating donation: ${error.message}`);
+                }
+            }
+            
+            async approveEvent(eventId) {
+                try {
+                    const response = await fetch('http://localhost:8000/api/events/action', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            event_id: eventId,
+                            action: 'approve'
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        this.log(`✅ Approved event: ${eventId.slice(0, 12)}...`);
+                        // Remove from pending list
+                        this.pendingEvents = this.pendingEvents.filter(e => e.id !== eventId);
+                        this.renderPendingEvents();
+                    } else {
+                        this.log(`❌ Failed to approve event: ${response.status}`);
+                    }
+                } catch (error) {
+                    this.log(`❌ Error approving event: ${error.message}`);
+                }
+            }
+            
+            async skipEvent(eventId) {
+                try {
+                    const response = await fetch('http://localhost:8000/api/events/action', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            event_id: eventId,
+                            action: 'skip'
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        this.log(`⏭️ Skipped event: ${eventId.slice(0, 12)}...`);
+                        // Remove from pending list
+                        this.pendingEvents = this.pendingEvents.filter(e => e.id !== eventId);
+                        this.renderPendingEvents();
+                    } else {
+                        this.log(`❌ Failed to skip event: ${response.status}`);
+                    }
+                } catch (error) {
+                    this.log(`❌ Error skipping event: ${error.message}`);
+                }
+            }
+            
+            async clearAllEvents() {
+                if (!confirm('Clear all events? This cannot be undone.')) return;
+                
+                try {
+                    const response = await fetch('http://localhost:8000/api/events', {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        this.log(`🧹 Cleared ${result.cleared} events`);
+                        this.pendingEvents = [];
+                        this.renderPendingEvents();
+                    }
+                } catch (error) {
+                    this.log(`❌ Error clearing events: ${error.message}`);
+                }
+            }
+            
+            updateStatus() {
+                const backendStatus = document.getElementById('backend-status');
+                const overlayStatus = document.getElementById('overlay-status');
+                
+                backendStatus.className = `status-dot ${this.backendConnected ? 'connected' : ''}`;
+                overlayStatus.className = `status-dot ${this.overlayConnected ? 'connected' : ''}`;
+            }
+            
+            setupPeriodicRefresh() {
+                // Refresh every 5 seconds
+                setInterval(async () => {
+                    if (this.backendConnected) {
+                        await this.loadPendingEvents();
+                    } else {
+                        await this.checkBackend();
+                    }
+                }, 5000);
+            }
+            
+            async refreshData() {
+                this.log('🔄 Refreshing data...');
+                await this.checkBackend();
+            }
+            
+            log(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logLine = `[${timestamp}] ${message}`;
+                console.log(logLine);
+                
+                const logDiv = document.createElement('div');
+                logDiv.textContent = logLine;
+                this.logElement.appendChild(logDiv);
+                this.logElement.scrollTop = this.logElement.scrollHeight;
+                
+                // Keep only last 50 log entries
+                while (this.logElement.children.length > 50) {
+                    this.logElement.removeChild(this.logElement.firstChild);
+                }
+            }
+        }
+        
+        // Initialize dashboard
+        let dashboard;
+        window.addEventListener('load', () => {
+            dashboard = new SimpleDashboard();
+            
+            // Global functions for buttons
+            window.sendDonation = (tier, amount) => dashboard.sendDonation(tier, amount);
+            window.sendCustomDonation = () => dashboard.sendCustomDonation();
+            window.clearAllEvents = () => dashboard.clearAllEvents();
+            window.refreshData = () => dashboard.refreshData();
+        });
+    </script>
+</body>
+</html>
