@@ -1,257 +1,351 @@
-# 🎮 AI16Z Stream Overlay
+# 🎮 Crypto SuperChat - AI16Z Memo Overlay
 
-**Professional-grade OBS overlay system for displaying AI16Z crypto donations with real-time moderation.**
+**Browser-based OBS overlay that displays memo messages from AI16Z token transfers on Solana in real-time.**
 
-Stream-ready overlay that shows donation alerts when viewers send AI16Z tokens with memo messages to your wallet. Features automatic filtering, manual moderation, and seamless OBS integration.
+Stream-ready overlay that shows donation alerts when viewers send AI16Z tokens with memo messages to your wallet. Features automatic filtering, manual moderation, and seamless OBS integration with zero build requirements.
 
 ## ✨ Features
 
-- **🎯 OBS-Ready Overlay** - Single HTML file, zero dependencies
-- **💰 Real-time Donations** - Live blockchain monitoring via Helius API
-- **🎛️ Moderation Dashboard** - Approve/skip donations before showing
-- **🔧 Configurable** - URL parameters for easy customization
-- **🎨 Tier-based Styling** - Different colors/animations for donation amounts
-- **🔊 Audio Support** - Notification sounds with each donation
-- **⚡ WebSocket Real-time** - Instant updates between backend and overlay
-- **🛡️ Content Filtering** - Automatic banned word detection
+- **🎯 Zero-Install Overlay** - Single HTML file, no dependencies or build process
+- **💰 Real-time Blockchain Monitoring** - Live Solana transaction monitoring via Helius API  
+- **🎛️ Moderation Dashboard** - Approve/reject donations before they appear on stream
+- **🔧 URL Parameter Configuration** - No config files needed, customize everything via URL
+- **🎨 Tier-based Styling** - Visual styling based on donation amounts (low/mid/high/whale)
+- **🔊 Audio & TTS Support** - Notification sounds and text-to-speech for donations
+- **⚡ WebSocket Communication** - Real-time updates between backend and overlay
+- **🛡️ Content Filtering** - Automatic profanity filtering and manual moderation
+- **📱 Demo Mode** - Test the overlay without real blockchain transactions
 
 ## 🚀 Quick Start
 
 ### 1. **Start the Backend**
 ```bash
 cd backend
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env  # Edit with your API keys
+uvicorn main:app --reload --port 8765
 ```
 
-### 2. **Add to OBS**
+### 2. **Start the Frontend**
+```bash
+cd frontend  
+python -m http.server 8000
+```
+
+### 3. **Add to OBS**
 - **Add Browser Source**
-- **URL**: `file:///path/to/frontend/overlay.html?obs=true`
+- **URL**: `http://localhost:8000/overlay.html?demo=true`
 - **Width**: 1920, **Height**: 1080
-- **Custom CSS**: None needed
+- **Enable**: "Control audio via OBS" and unmute in mixer
 
-### 3. **Configure Environment**
+### 4. **Test with Demo Mode**
 ```bash
-cp .env.example .env
-# Edit .env with your API keys
-```
-
-### 4. **Test the System**
-```bash
-# Open test environment
-open tests/frontend/overlay_test.html
+# Test overlay positioning and audio
+http://localhost:8000/overlay.html?demo=true&audio=true&position=top-right
 ```
 
 ## 📁 Project Structure
 
 ```
-chainchat/
-├── frontend/                    # 🎨 Production web interface
-│   ├── overlay.html            # Main OBS overlay (single file)
-│   ├── dashboard.html          # Streamer moderation dashboard
-│   └── media/alert.gif         # Notification media
-├── backend/                     # ⚡ API server & WebSocket
-│   ├── main.py                 # FastAPI application
-│   ├── models.py               # Database models  
-│   ├── database.py             # SQLite operations
-│   └── requirements.txt        # Python dependencies
+crypto-superchat/
+├── frontend/                    # 🎨 Browser-based overlay
+│   ├── overlay.html            # Main OBS overlay (single file, ~500 lines)
+│   ├── dashboard.html          # Admin moderation interface
+│   ├── media/                  # Static assets
+│   │   ├── alert.gif           # Visual notification
+│   │   └── notification.mp3    # Audio notification
+│   └── README.md               # Frontend documentation
+├── backend/                     # ⚡ FastAPI server with SQLite
+│   ├── main.py                 # FastAPI application with WebSocket
+│   ├── models.py               # SQLAlchemy database models
+│   ├── listener.py             # Blockchain monitoring service
+│   ├── database.py             # Database utilities
+│   ├── requirements.txt        # Python dependencies
+│   └── README.md               # Backend documentation
 ├── tests/                       # 🧪 Testing environment
-│   ├── frontend/
+│   ├── frontend/               # Frontend test files
 │   │   ├── overlay_test.html   # Interactive overlay testing
-│   │   └── simple_dashboard.html # Manual moderation testing
-│   └── backend/
-│       └── test_api.py         # Automated API tests
-├── old/                        # 🗄️ Legacy code (reference only)
-├── .env.example               # Configuration template
+│   │   ├── test_dashboard.html # Dashboard testing
+│   │   └── simple_dashboard.html
+│   ├── backend/                # Backend API tests
+│   │   ├── test_api.py         # API endpoint tests
+│   │   └── test_donations.py   # Database tests
+│   └── README.md               # Testing documentation
+├── old/                        # 🗄️ Legacy modular architecture
+│   ├── frontend/js/            # Original modular ES6 system
+│   ├── settings.json           # Old config files
+│   └── prepros.config          # Build tool config (unused)
+├── .env.example               # Environment configuration template
+├── CLAUDE.md                  # Development guidance
 └── README.md                  # This file
 ```
 
 ## ⚙️ Configuration
 
-### Environment Variables
+### Backend Environment Variables (.env file)
 ```bash
 # Required: Blockchain API
-HELIUS_API_KEY=your_helius_api_key
-PRIZE_WALLET_ADDRESS=your_wallet_address
+HELIUS_API_KEY=your_helius_api_key_here
+AI16Z_WALLET_ADDRESS=HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC
+AI16Z_MINT_ADDRESS=HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC
 
-# Optional: Customization  
-AI16Z_MINT=HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC
-DATABASE_URL=sqlite:///overlay.db
-AUTO_MODE=false
+# Database
+DATABASE_URL=sqlite:///./donations.db
 
-# Overlay Display Settings
-OVERLAY_POSITION=bottom-right
-DONATION_DURATION_MS=5000
-TIER_MID=1000
-TIER_HIGH=10000
-TIER_WHALE=100000
+# Server
+PORT=8765
+HOST=0.0.0.0
+
+# Content Moderation
+ENABLE_PROFANITY_FILTER=true
+BANNED_WORDS=scam,spam,hack,fake
+MIN_DONATION_AMOUNT_USD=1.0
+MAX_MEMO_LENGTH=280
 ```
 
-### URL Parameters
-Configure the overlay without touching code:
+### Frontend URL Parameters
+Configure the overlay without editing files:
 
 ```bash
-# Basic configuration
-frontend/overlay.html?host=localhost&port=8000&duration=3000
+# Demo mode for testing
+overlay.html?demo=true&audio=true&position=top-right
 
-# Position and styling
-frontend/overlay.html?position=top-left&debug=true
+# Live mode with custom settings  
+overlay.html?host=yourserver.com&port=8765&showAmount=false
 
-# OBS production mode
-frontend/overlay.html?obs=true&host=yourserver.com
+# Silent mode for positioning tests
+overlay.html?demo=true&audio=false&demoInterval=3000
 ```
 
 **Available Parameters:**
-- `host` - Backend host (default: localhost)
-- `port` - Backend port (default: 8000) 
-- `duration` - Display duration in ms (default: 5000)
-- `position` - Toast position (default: bottom-right)
-- `debug` - Show connection status (default: false)
-- `demo` - Demo mode with test donation (default: false)
-- `obs` - OBS mode, minimal UI (default: false)
+- `demo=true` - Enable demo mode with test messages
+- `host=localhost` - WebSocket server host (default: window.location.hostname)
+- `port=8765` - WebSocket server port (default: 8765)
+- `audio=false` - Disable all audio
+- `tts=false` - Disable text-to-speech only  
+- `sfx=false` - Disable sound effects only
+- `showAmount=false` - Hide donation amounts
+- `position=top-right` - Toast position (top-left/top-right/bottom-left/bottom-right)
+- `offsetX=50` - Horizontal offset in pixels
+- `offsetY=50` - Vertical offset in pixels
+- `demoInterval=5000` - Time between demo messages in ms
 
 ## 🧪 Testing
 
-### Automated Tests
+### Demo Mode Testing
 ```bash
-# Backend API tests
+# Test overlay with fake donations
+http://localhost:8000/overlay.html?demo=true&audio=true
+
+# Test dashboard moderation flow
+http://localhost:8000/dashboard.html
+```
+
+### Backend API Testing
+```bash
 cd tests/backend
 python test_api.py
+python test_donations.py
 ```
 
-### Interactive Testing
+### Interactive Frontend Testing
 ```bash
-# Visual overlay testing
-open tests/frontend/overlay_test.html
-
-# Manual dashboard testing  
-open tests/frontend/simple_dashboard.html
+# Open test environments in browser
+tests/frontend/overlay_test.html
+tests/frontend/test_dashboard.html
 ```
 
-See `tests/README.md` for detailed testing instructions.
+See `tests/README.md` for comprehensive testing documentation.
 
 ## 🎯 Usage Workflows
 
 ### For Streamers
-1. **Setup**: Start backend, configure API keys
-2. **Dashboard**: Open `frontend/dashboard.html` for moderation
-3. **OBS**: Add `frontend/overlay.html` as browser source  
-4. **Moderation**: Use dashboard to approve/skip donations
-5. **Go Live**: Donations appear automatically on stream
+1. **Backend Setup**: Start backend server with your API keys in `.env`
+2. **Moderation Dashboard**: Open `http://localhost:8000/dashboard.html`
+3. **OBS Integration**: Add browser source with `http://localhost:8000/overlay.html`  
+4. **Go Live**: Approve/reject donations in real-time via dashboard
+5. **Demo First**: Test with `?demo=true` before going live
 
-### For Developers
-1. **Development**: Use test environment for development
-2. **Testing**: Run automated tests before deployment
-3. **Deployment**: Single HTML file for easy hosting
+### For Developers  
+1. **Development**: Edit single HTML files directly, no build process
+2. **Testing**: Use demo mode and automated tests
+3. **Deployment**: Host static frontend files anywhere, deploy backend to server
 
 ## 🔧 Development
 
 ### Backend Development
 ```bash
 cd backend
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python -m uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8765
 ```
 
 ### Frontend Development  
-The overlay is a single HTML file with no build process. Edit `frontend/overlay.html` directly.
+**Zero build process** - edit HTML files directly:
+- **Overlay**: Edit `frontend/overlay.html` (embedded CSS/JS)
+- **Dashboard**: Edit `frontend/dashboard.html` (embedded CSS/JS)
+- **Assets**: Replace files in `frontend/media/`
 
-### Adding Features
-- **Backend**: Add endpoints to `main.py`
-- **Frontend**: Modify overlay.html
-- **Tests**: Add tests to `tests/` directory
+### Architecture
+- **Single-file frontend**: No modules, imports, or build steps
+- **URL parameter config**: No config files, everything via URL parameters
+- **WebSocket communication**: Real-time backend ↔ frontend updates
+- **SQLite database**: Simple, file-based persistence
 
 ## 🛡️ Security
 
-- **Environment Variables**: Keep API keys in `.env` (not in code)
-- **Content Filtering**: Automatic banned word detection
-- **Input Validation**: All user inputs are validated
-- **CORS**: Configured for local development only
+- **Environment Variables**: API keys in `.env` file only
+- **Content Filtering**: Automatic banned word detection and manual moderation
+- **Input Validation**: Pydantic models validate all API inputs
+- **CORS**: Configured for cross-origin frontend communication
+- **Memo Sanitization**: User-generated content is filtered before display
 
 ## 📦 Deployment
 
 ### Local Development
 ```bash
-# Start backend
-cd backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000
+# Start backend (Terminal 1)
+cd backend && uvicorn main:app --reload --port 8765
 
-# Use overlay
-frontend/overlay.html?host=localhost&port=8000
+# Start frontend server (Terminal 2)  
+cd frontend && python -m http.server 8000
+
+# Access overlay
+http://localhost:8000/overlay.html?demo=true
 ```
 
-### Production
+### Production Deployment
 ```bash
-# Deploy backend to your server
-# Update overlay URL: frontend/overlay.html?host=yourserver.com&port=8000
+# Backend: Deploy to VPS/cloud with public IP
+uvicorn main:app --host 0.0.0.0 --port 8765
+
+# Frontend: Host static files anywhere (Netlify, GitHub Pages, etc.)
+# Update overlay URL: overlay.html?host=yourserver.com&port=8765
 ```
 
-### OBS Studio Setup
+### OBS Studio Integration
 1. **Add Browser Source**
-2. **URL**: `file:///absolute/path/to/frontend/overlay.html?obs=true`
-3. **Size**: 1920x1080 (or your canvas size)
-4. **Properties**: Check "Refresh browser when scene becomes active"
+2. **URL**: `http://localhost:8000/overlay.html?demo=true`
+3. **Size**: 1920x1080 (match your canvas)
+4. **Audio**: Enable "Control audio via OBS" + unmute in mixer
+5. **Settings**: Enable "Refresh browser when scene becomes active"
 
 ## 🎨 Customization
 
 ### Donation Tiers
-Edit tier thresholds in `.env`:
-```bash
-TIER_MID=1000      # $1,000+ = Mid tier (blue)
-TIER_HIGH=10000    # $10,000+ = High tier (purple)  
-TIER_WHALE=100000  # $100,000+ = Whale tier (orange)
+Tiers are defined in frontend code (overlay.html):
+```javascript
+// Lines ~200-220 in overlay.html
+const tiers = {
+  whale: 1000,    // ≥$1000 = Gold
+  high: 100,      // ≥$100 = Purple  
+  mid: 10,        // ≥$10 = Blue
+  low: 0          // <$10 = Gray
+};
 ```
 
-### Styling
-The overlay uses CSS custom properties for easy theming:
+### Visual Styling
+Modify CSS in overlay.html:
 ```css
-:root {
-  --tier-low: #10b981;    /* Green */
-  --tier-mid: #3b82f6;    /* Blue */ 
-  --tier-high: #a855f7;   /* Purple */
-  --tier-whale: #f59e0b;  /* Orange */
-}
+/* Lines ~50-150 in overlay.html */
+.tier-whale { border-color: #ffd700; /* Gold */ }
+.tier-high { border-color: #a855f7;  /* Purple */ }
+.tier-mid { border-color: #3b82f6;   /* Blue */ }
+.tier-low { border-color: #6b7280;   /* Gray */ }
 ```
 
-### Media Assets
-Replace `frontend/media/alert.gif` with your own notification media.
+### Audio & Media
+- **Notification Sound**: Replace `frontend/media/notification.mp3`
+- **Alert Animation**: Replace `frontend/media/alert.gif`
+- **TTS Voices**: Configure in overlay.html WebSpeechAPI settings
 
 ## 🐛 Troubleshooting
 
+### Common Issues
+
 **Overlay not showing donations:**
-- Check backend is running on port 8000
-- Verify WebSocket connection in browser console
-- Test with `tests/frontend/overlay_test.html`
+- Check backend is running: `curl http://localhost:8765/health`
+- Verify WebSocket connection in browser console (F12 → Network → WS tab)
+- Test with demo mode first: `?demo=true`
+- Check browser console for error messages
+
+**Audio not working in OBS:**
+- Enable "Control audio via OBS" in Browser Source properties
+- Unmute the source in OBS audio mixer  
+- Test with: `?demo=true&audio=true`
 
 **Backend connection issues:**
-- Check `.env` file has correct API keys
-- Verify Helius API key is valid
-- Check firewall/port settings
+- Verify `.env` file has correct API keys
+- Check Helius API key is valid and has credits
+- Ensure backend port 8765 is not blocked by firewall
+- Try different host: `?host=127.0.0.1`
 
-**OBS not displaying overlay:**
-- Use absolute file path in browser source
-- Check OBS browser source size matches canvas
-- Enable "Refresh browser when scene becomes active"
+**WebSocket connection failed:**
+- Backend not running or wrong port (should be 8765)
+- Browser blocking WebSocket connections (check console)
+- Network/firewall blocking connections
+- Try restarting both backend and frontend servers
+
+**No real donations appearing:**
+- Check `HELIUS_API_KEY` is valid in `.env`  
+- Verify `AI16Z_WALLET_ADDRESS` and `AI16Z_MINT_ADDRESS` are correct
+- Check backend logs for blockchain API errors
+- Ensure donations meet minimum amount threshold
+
+### Debug Steps
+
+1. **Test Demo Mode**: `?demo=true` - should show fake donations
+2. **Check Backend Health**: Visit `http://localhost:8765/health`  
+3. **Monitor WebSocket**: Browser F12 → Network → WS tab
+4. **Check Backend Logs**: Look for errors in terminal running uvicorn
+5. **Test Dashboard**: Open `http://localhost:8000/dashboard.html`
 
 ## 🤝 Contributing
 
 1. **Fork** the repository
 2. **Create** feature branch (`git checkout -b feature/amazing-feature`)
-3. **Test** your changes (`python tests/backend/test_api.py`)
+3. **Test** your changes:
+   ```bash
+   # Test backend
+   cd tests/backend && python test_api.py
+   
+   # Test frontend
+   open overlay.html?demo=true
+   ```
 4. **Commit** changes (`git commit -m 'Add amazing feature'`)
 5. **Push** to branch (`git push origin feature/amazing-feature`)
 6. **Open** Pull Request
 
+### Development Guidelines
+- **Frontend**: Single-file architecture, no modules or build process
+- **Backend**: FastAPI with async patterns, SQLAlchemy models
+- **Testing**: Use demo mode for frontend, pytest for backend
+- **Documentation**: Update component READMEs when adding features
+
+## 📚 Documentation
+
+- **`/frontend/README.md`** - Frontend setup, configuration, and OBS integration
+- **`/backend/README.md`** - Backend API, database, and deployment
+- **`/tests/README.md`** - Testing procedures and environments  
+- **`/CLAUDE.md`** - Development guidance for Claude Code
+
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
 
 ## 🙋‍♂️ Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-repo/discussions)
-- **Documentation**: See `tests/README.md` for detailed testing info
+For issues and questions:
+- Check the troubleshooting section above
+- Review component READMEs for detailed setup
+- Test with demo mode before reporting issues
+- Include browser console logs when reporting frontend issues
 
 ---
 
 **Built for streamers, by developers** 💜
 
-*Professional stream overlay system for the AI16Z community*
+*Zero-dependency OBS overlay for the AI16Z community*
