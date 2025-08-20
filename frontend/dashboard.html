@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Stream Overlay Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        
+        /* Simple Dark Theme Variables */
+        :root {
+            --bg-primary: #1f2937;    /* gray-800 */
+            --bg-secondary: #111827;  /* gray-900 */
+            --bg-card: #374151;       /* gray-700 */
+            --text-primary: #f9fafb;  /* gray-50 */
+            --text-secondary: #d1d5db; /* gray-300 */
+            --text-muted: #9ca3af;    /* gray-400 */
+            --border-color: #4b5563;  /* gray-600 */
+            --accent-blue: #3b82f6;   /* blue-500 */
+            --accent-green: #10b981;  /* emerald-500 */
+            --accent-red: #ef4444;    /* red-500 */
+            --accent-orange: #f97316; /* orange-500 */
+        }
+        
+        /* Global overrides for consistent dark theme */
+        body {
+            background-color: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        /* Card styling */
+        .card {
+            background-color: var(--bg-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        /* Text overrides */
+        .text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500 {
+            color: var(--text-primary) !important;
+        }
+        
+        .text-gray-400 {
+            color: var(--text-muted) !important;
+        }
+        
+        /* Form controls */
+        input, select, textarea {
+            background-color: var(--bg-card) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        input::placeholder, select::placeholder, textarea::placeholder {
+            color: var(--text-muted) !important;
+        }
+        
+        /* Select arrow color fix */
+        select {
+            background-image: url("data:image/svg+xml;charset=utf-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+        }
+        
+        /* Button styling */
+        button {
+            color: var(--text-primary) !important;
+        }
+        
+        /* Remove gradients */
+        [class*="bg-gradient"] {
+            background: var(--bg-card) !important;
+        }
+        
+        /* Header specific styling */
+        .header-card {
+            background: var(--bg-primary) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+        }
+        
+        .tooltip {
+            @apply invisible absolute z-50 text-xs rounded py-1 px-2 -mt-8 -ml-4;
+            background-color: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        .tooltip-trigger:hover .tooltip {
+            @apply visible;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen" x-data="dashboardApp()" x-init="init()">
+    
+    <!-- Setup Wizard Modal -->
+    <div x-show="showWizard" x-cloak class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gray-800 text-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-700">
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold text-white">🚀 Welcome to Crypto Stream Overlay</h2>
+                    <button @click="completeWizard()" class="text-gray-400 hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-gray-300 mt-2">Let's get you set up with your donation overlay in just a few steps!</p>
+            </div>
+            
+            <div class="p-6">
+                <!-- Step Indicator -->
+                <div class="flex justify-center mb-8">
+                    <div class="flex items-center">
+                        <template x-for="(step, index) in wizardSteps" :key="index">
+                            <div class="flex items-center" :class="index > 0 ? 'ml-4' : ''">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+                                     :class="index <= wizardStep ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-300'">
+                                    <span x-text="index + 1"></span>
+                                </div>
+                                <div x-show="index < wizardSteps.length - 1" class="w-12 h-0.5 bg-gray-700 ml-4">
+                                    <div class="h-full bg-blue-500 transition-all duration-500" 
+                                         :style="`width: ${index < wizardStep ? '100%' : '0%'}`"></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <!-- Step Content -->
+                <div class="min-h-[400px]">
+                    <!-- Step 1: Welcome & Token Selection -->
+                    <div x-show="wizardStep === 0" x-transition>
+                        <h3 class="text-xl font-semibold mb-4 text-white">Step 1: Choose Your Token</h3>
+                        <p class="text-gray-300 mb-6">Select the cryptocurrency token your viewers will donate with:</p>
+                        
+                        <div class="space-y-3">
+                            <template x-for="preset in tokenPresets" :key="preset.symbol">
+                                <button @click="selectTokenPreset(preset)" 
+                                        :class="settings.tokenSymbol === preset.symbol ? 'ring-2 ring-blue-500 bg-blue-900/50' : 'hover:bg-gray-700'"
+                                        class="w-full p-4 border border-gray-600 rounded-lg flex items-center space-x-4 text-left transition-all bg-gray-800">
+                                    <div class="w-8 h-8 flex items-center justify-center">
+                                        <img x-show="preset.logo" :src="preset.logo" :alt="preset.name" class="w-8 h-8 rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                        <span class="text-2xl" x-text="preset.icon" x-show="!preset.logo"></span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-white" x-text="preset.name"></div>
+                                        <div class="text-sm text-gray-300" x-text="preset.symbol"></div>
+                                    </div>
+                                    <div class="text-sm text-gray-400" x-text="preset.network"></div>
+                                </button>
+                            </template>
+                            
+                            <button @click="selectTokenPreset({symbol: 'CUSTOM', name: 'Custom Token', icon: '🔧', network: 'Custom'})"
+                                    :class="settings.tokenSymbol === 'CUSTOM' ? 'ring-2 ring-blue-500 bg-blue-900/50' : 'hover:bg-gray-700'"
+                                    class="w-full p-4 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center text-gray-300 transition-all bg-gray-700 hover:bg-gray-600">
+                                <span class="text-xl mr-2">🔧</span>
+                                <span>Custom Token (Advanced)</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: API & Wallet Configuration -->
+                    <div x-show="wizardStep === 1" x-transition>
+                        <h3 class="text-xl font-semibold mb-4">Step 2: Connect Your Wallet & API</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-200 mb-2">
+                                    Blockchain API Key
+                                    <div class="tooltip-trigger relative inline-block ml-1">
+                                        <span class="text-blue-500 cursor-help">ℹ️</span>
+                                        <div class="tooltip">Get this from your blockchain API provider (Helius, Alchemy, etc.)</div>
+                                    </div>
+                                </label>
+                                <input type="password" x-model="settings.apiKey" 
+                                       class="wizard-input" 
+                                       placeholder="Enter your API key"
+                                       :class="wizardValidation.apiKey ? 'border-red-300' : ''">
+                                <p x-show="wizardValidation.apiKey" class="text-red-500 text-xs mt-1" x-text="wizardValidation.apiKey"></p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-200 mb-2">
+                                    Your Wallet Address
+                                    <div class="tooltip-trigger relative inline-block ml-1">
+                                        <span class="text-blue-500 cursor-help">ℹ️</span>
+                                        <div class="tooltip">This is where viewers will send donations</div>
+                                    </div>
+                                </label>
+                                <input type="text" x-model="settings.walletAddress" 
+                                       class="wizard-input" 
+                                       placeholder="Enter your wallet address"
+                                       :class="wizardValidation.walletAddress ? 'border-red-300' : ''">
+                                <p x-show="wizardValidation.walletAddress" class="text-red-500 text-xs mt-1" x-text="wizardValidation.walletAddress"></p>
+                            </div>
+                            
+                            <div x-show="settings.tokenSymbol === 'CUSTOM'">
+                                <label class="block text-sm font-medium text-gray-200 mb-2">Token Contract Address</label>
+                                <input type="text" x-model="settings.tokenAddress" 
+                                       class="wizard-input" 
+                                       placeholder="Enter token contract address">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3: Overlay Customization -->
+                    <div x-show="wizardStep === 2" x-transition>
+                        <h3 class="text-xl font-semibold mb-4">Step 3: Customize Your Overlay</h3>
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-200 mb-2">Position</label>
+                                    <select x-model="settings.position" class="wizard-input">
+                                        <option value="top-left">Top Left</option>
+                                        <option value="top-right">Top Right</option>
+                                        <option value="bottom-left">Bottom Left</option>
+                                        <option value="bottom-right">Bottom Right</option>
+                                        <option value="center">Center</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-200 mb-2">Duration (seconds)</label>
+                                    <input type="number" x-model="settings.displayDuration" 
+                                           class="wizard-input" min="1" max="30" step="1"
+                                           @input="settings.displayDuration = Math.max(1, Math.min(30, parseInt($event.target.value) || 5))">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-200 mb-4">Theme</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <template x-for="theme in overlayThemes" :key="theme.id">
+                                        <button @click="settings.theme = theme.id"
+                                                :class="settings.theme === theme.id ? 'ring-2 ring-blue-500' : ''"
+                                                class="p-3 border rounded-lg text-left hover:bg-gray-50 transition-all">
+                                            <div class="font-medium" x-text="theme.name"></div>
+                                            <div class="text-xs text-gray-400" x-text="theme.description"></div>
+                                            <div class="flex mt-2 space-x-1">
+                                                <template x-for="color in theme.colors" :key="color">
+                                                    <div class="w-4 h-4 rounded-full" :style="`background-color: ${color}`"></div>
+                                                </template>
+                                            </div>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4: Donation Tiers -->
+                    <div x-show="wizardStep === 3" x-transition>
+                        <h3 class="text-xl font-semibold mb-4 text-white">Step 4: Set Donation Tiers</h3>
+                        <p class="text-gray-300 mb-6">Set minimum amounts for different donation effects:</p>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <template x-for="tier in tiers" :key="tier.name">
+                                <div class="bg-gray-700 rounded-lg p-4">
+                                    <div class="flex items-center space-x-3 mb-3">
+                                        <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                                             :class="getTierColorClass(tier.name)">
+                                            <span class="text-white text-sm font-bold" x-text="tier.label.charAt(0)"></span>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-white" x-text="tier.label"></div>
+                                            <div class="text-xs text-gray-400" x-text="tier.description"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-gray-300 text-sm">$</span>
+                                        <input type="number" x-model="tier.value" 
+                                               class="wizard-input w-20 text-center" 
+                                               min="0" step="1">
+                                        <span class="text-gray-300 text-sm" x-text="settings.tokenSymbol"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 5: Review & Complete -->
+                    <div x-show="wizardStep === 4" x-transition>
+                        <h3 class="text-xl font-semibold mb-4">🎉 Setup Complete!</h3>
+                        <p class="text-gray-300 mb-6">Your overlay is ready to go! Here's a summary of your settings:</p>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4 space-y-3 mb-6">
+                            <div class="flex justify-between">
+                                <span class="font-medium">Token:</span>
+                                <span x-text="settings.tokenSymbol"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="font-medium">Position:</span>
+                                <span x-text="settings.position.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="font-medium">Duration:</span>
+                                <span x-text="settings.displayDuration + ' seconds'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="font-medium">Theme:</span>
+                                <span x-text="overlayThemes.find(t => t.id === settings.theme)?.name"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                            <h4 class="font-semibold text-blue-900 mb-2">🎯 Next Steps:</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-blue-800 text-sm">
+                                <li>Add the overlay URL to your streaming software (OBS, Streamlabs, etc.)</li>
+                                <li>Share your wallet address with viewers</li>
+                                <li>Start streaming and watch donations appear!</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Wizard Navigation -->
+                <div class="flex justify-between pt-6 border-t border-gray-700">
+                    <button @click="wizardStep = Math.max(0, wizardStep - 1)" 
+                            :disabled="wizardStep === 0"
+                            class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                        ← Previous
+                    </button>
+                    
+                    <div class="flex space-x-3">
+                        <button @click="skipWizard()" class="px-4 py-2 text-sm font-medium text-gray-400 hover:text-gray-200">
+                            Skip Setup
+                        </button>
+                        
+                        <button @click="nextWizardStep()" 
+                                :disabled="!canProceedWizard()"
+                                class="px-6 py-2 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <span x-show="wizardStep < 4">Next →</span>
+                            <span x-show="wizardStep === 4">Complete Setup</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <header class="header-card">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo & Title -->
+                <div class="flex items-center space-x-4">
+                    <div class="text-2xl">💎</div>
+                    <div>
+                        <h1 class="text-xl font-bold">Crypto Stream Overlay</h1>
+                        <p class="text-sm text-gray-300">Universal donation overlay system</p>
+                    </div>
+                </div>
+                
+                <!-- Navigation Tabs -->
+                <nav class="flex space-x-1 bg-gray-700 rounded-lg p-1">
+                    <template x-for="tab in tabs" :key="tab.id">
+                        <button 
+                            @click="activeTab = tab.id"
+                            :class="activeTab === tab.id ? 'bg-blue-500 text-white' : 'text-gray-300 hover:text-white'"
+                            class="px-4 py-2 text-sm font-medium rounded-md transition-colors"
+                            x-text="tab.icon + ' ' + tab.name">
+                        </button>
+                    </template>
+                </nav>
+
+                <!-- Status & Quick Actions -->
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div :class="backendConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
+                        <span class="text-sm">Backend</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div :class="overlayConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
+                        <span class="text-sm">Overlay</span>
+                    </div>
+                    <button @click="showWizard = true" class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                        🚀 Setup Wizard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Dashboard Tab -->
+        <div x-show="activeTab === 'dashboard'" x-transition:enter="animate-fade-in" class="space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Controls Card -->
+                <div class="card rounded-xl shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-600">
+                        <h2 class="text-lg font-semibold">⚙️ Stream Controls</h2>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <!-- Mode Toggle -->
+                        <div class="space-y-3">
+                            <label class="text-sm font-medium text-gray-200">Approval Mode</label>
+                            <div class="flex bg-gray-700 rounded-lg p-1">
+                                <button 
+                                    @click="setMode('manual')"
+                                    :class="currentMode === 'manual' ? 'bg-gray-600 shadow-sm text-white' : 'text-gray-300'"
+                                    class="flex-1 py-2 px-3 text-sm font-medium rounded-md transition-all duration-200">
+                                    👤 Manual Review
+                                </button>
+                                <button 
+                                    @click="setMode('auto')"
+                                    :class="currentMode === 'auto' ? 'bg-gray-600 shadow-sm text-white' : 'text-gray-300'"
+                                    class="flex-1 py-2 px-3 text-sm font-medium rounded-md transition-all duration-200">
+                                    🤖 Auto Approve
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="approveAll()" class="btn-success" :disabled="pendingCount === 0">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Approve All
+                            </button>
+                            <button @click="skipAll()" class="btn-danger" :disabled="pendingCount === 0">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                                Skip All
+                            </button>
+                            <button @click="clearEvents()" class="btn-warning">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 000 2h4a1 1 0 100-2H8z" clip-rule="evenodd"></path>
+                                </svg>
+                                Clear Queue
+                            </button>
+                            <button @click="refreshData()" class="btn-primary">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                                </svg>
+                                Refresh
+                            </button>
+                        </div>
+                        
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-700">
+                            <div class="text-center p-4 bg-gray-700 rounded-lg border border-gray-600">
+                                <div class="text-2xl font-bold text-white" x-text="pendingCount">0</div>
+                                <div class="text-sm text-gray-300">Pending</div>
+                            </div>
+                            <div class="text-center p-4 bg-gray-700 rounded-lg border border-gray-600">
+                                <div class="text-2xl font-bold text-white" x-text="approvedCount">0</div>
+                                <div class="text-sm text-gray-300">Approved</div>
+                            </div>
+                            <div class="text-center p-4 bg-gray-700 rounded-lg border border-gray-600">
+                                <div class="text-2xl font-bold text-white" x-text="formatCurrency(totalAmount)">$0</div>
+                                <div class="text-sm text-gray-300">Total Value</div>
+                            </div>
+                            <div class="text-center p-4 bg-gray-700 rounded-lg border border-gray-600">
+                                <div class="text-2xl font-bold text-white" x-text="sessionTime">00:00</div>
+                                <div class="text-sm text-gray-300">Session Time</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Wallet Card -->
+                <div class="card rounded-xl shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-600">
+                        <h2 class="text-lg font-semibold">💰 Donation Address</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="bg-gray-700 border-2 border-gray-600 rounded-lg p-4 space-y-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex-shrink-0">
+                                    <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                                        <span class="text-white text-lg">🎯</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-300 mb-1" x-text="settings.tokenSymbol + ' Address:'"></div>
+                                    <div class="font-mono text-sm text-gray-200 break-all lg:hidden" x-text="walletAddressShort">
+                                        Loading...
+                                    </div>
+                                    <div class="font-mono text-sm text-gray-200 break-all hidden lg:block" x-text="walletAddressFull">
+                                        Loading...
+                                    </div>
+                                </div>
+                                <button @click="copyWalletAddress()" class="btn-copy">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+                                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
+                                    </svg>
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="text-center space-y-2">
+                                <p class="text-sm text-gray-600">
+                                    Share this address for viewers to send <span class="font-semibold" x-text="settings.tokenSymbol"></span> donations
+                                </p>
+                                <div class="flex items-center justify-center space-x-2">
+                                    <span class="text-xs px-2 py-1 bg-gray-600 rounded-full text-gray-200">Network:</span>
+                                    <span class="text-xs px-2 py-1 bg-blue-900/50 text-blue-300 rounded-full font-medium" x-text="getTokenNetwork()"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pending Donations -->
+            <div class="card rounded-xl shadow-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-600">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold">💰 Pending Donations</h2>
+                        <span class="bg-white bg-opacity-20 text-white text-sm font-medium px-3 py-1 rounded-full" x-text="pendingCount">0</span>
+                    </div>
+                </div>
+                <div class="max-h-96 overflow-y-auto">
+                    <template x-if="pendingEvents.length === 0">
+                        <div class="p-12 text-center">
+                            <div class="text-6xl mb-4 animate-bounce-gentle">💤</div>
+                            <h3 class="text-lg font-medium text-gray-200 mb-2">No pending donations</h3>
+                            <p class="text-gray-400">Donations will appear here when viewers send <span class="font-semibold text-white" x-text="settings.tokenSymbol"></span> tokens</p>
+                            <button @click="simulateDonation()" class="mt-4 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                🧪 Simulate Test Donation
+                            </button>
+                        </div>
+                    </template>
+                    
+                    <template x-for="event in pendingEvents" :key="event.id">
+                        <div class="px-6 py-4 border-b border-gray-700 hover:bg-gray-700 transition-colors duration-200">
+                            <div class="flex items-start space-x-4">
+                                <div class="flex-shrink-0">
+                                    <span :class="getTierBadgeClass(event.tier)" class="tier-badge" x-text="event.tier.toUpperCase()"></span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-200 break-words" x-text="event.memo"></p>
+                                    <div class="mt-1 flex flex-wrap items-center gap-4 text-xs text-gray-400">
+                                        <span class="flex items-center">
+                                            💰 <span x-text="formatCurrency(event.amount) + ' ' + settings.tokenSymbol"></span>
+                                        </span>
+                                        <span class="flex items-center">
+                                            👤 <span x-text="event.sender.slice(0, 8) + '...' + event.sender.slice(-4)"></span>
+                                        </span>
+                                        <span class="flex items-center">
+                                            ⏰ <span x-text="formatTime(event.created_at)"></span>
+                                        </span>
+                                        <span x-show="event.auto_filtered" class="text-red-600 font-medium flex items-center">
+                                            🚨 Auto-flagged
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0 flex space-x-2">
+                                    <button @click="approveEvent(event.id)" class="btn-success-sm">
+                                        ✓ Approve
+                                    </button>
+                                    <button @click="skipEvent(event.id)" class="btn-danger-sm">
+                                        ✗ Skip
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div x-show="activeTab === 'settings'" x-transition:enter="animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Configuration Import/Export -->
+                <div class="lg:col-span-2">
+                    <div class="card rounded-xl shadow-lg overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-600">
+                            <h2 class="text-lg font-semibold">⚙️ Configuration Management</h2>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="relative">
+                                    <input type="file" @change="importSettings($event)" accept=".json" class="hidden" id="import-settings">
+                                    <label for="import-settings" class="btn-secondary w-full cursor-pointer">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Import Settings
+                                    </label>
+                                </div>
+                                <button @click="exportSettings()" class="btn-primary">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Export Settings
+                                </button>
+                                <button @click="resetToDefaults()" class="btn-warning">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Reset Defaults
+                                </button>
+                            </div>
+                            <div class="mt-6 p-4 bg-gray-700 border border-gray-600 rounded-lg">
+                                <h4 class="font-semibold text-blue-400 mb-2">💡 Configuration Tips:</h4>
+                                <ul class="text-gray-300 text-sm space-y-1">
+                                    <li>• Export your settings before making major changes</li>
+                                    <li>• Share settings files with other streamers for consistency</li>
+                                    <li>• Import settings to quickly restore your configuration</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Blockchain Configuration -->
+                <div class="card rounded-xl shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-600">
+                        <h2 class="text-lg font-semibold text-white">🔐 Blockchain Configuration</h2>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <!-- Token Selection -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-200">Token</label>
+                            <select x-model="settings.tokenSymbol" @change="onTokenChange()" class="setting-input">
+                                <template x-for="preset in tokenPresets" :key="preset.symbol">
+                                    <option :value="preset.symbol" x-text="preset.name + ' (' + preset.symbol + ')'"></option>
+                                </template>
+                                <option value="CUSTOM">Custom Token</option>
+                            </select>
+                        </div>
+
+                        <!-- API Key -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">
+                                API Key
+                                <div class="tooltip-trigger relative inline-block ml-1">
+                                    <span class="text-blue-500 cursor-help">ℹ️</span>
+                                    <div class="tooltip">Get this from your blockchain API provider</div>
+                                </div>
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    :type="settings.apiKeyVisible ? 'text' : 'password'"
+                                    x-model="settings.apiKey"
+                                    :disabled="!settings.editing.apiKey"
+                                    class="setting-input pr-24"
+                                    placeholder="Enter your API key">
+                                <div class="absolute inset-y-0 right-0 flex items-center space-x-1 pr-3">
+                                    <button @click="toggleApiKeyVisibility()" class="btn-icon">
+                                        <svg x-show="!settings.apiKeyVisible" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <svg x-show="settings.apiKeyVisible" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"></path>
+                                            <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"></path>
+                                        </svg>
+                                    </button>
+                                    <button @click="copyToClipboard(settings.apiKey, 'API key')" class="btn-icon">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+                                            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
+                                        </svg>
+                                    </button>
+                                    <button @click="toggleEdit('apiKey')" class="btn-icon">
+                                        <svg x-show="!settings.editing.apiKey" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                                        </svg>
+                                        <svg x-show="settings.editing.apiKey" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Wallet Address -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-200">Wallet Address</label>
+                            <div class="relative">
+                                <input 
+                                    type="text"
+                                    x-model="settings.walletAddress"
+                                    :disabled="!settings.editing.wallet"
+                                    class="setting-input pr-16"
+                                    placeholder="Enter your wallet address">
+                                <div class="absolute inset-y-0 right-0 flex items-center space-x-1 pr-3">
+                                    <button @click="copyToClipboard(settings.walletAddress, 'Wallet address')" class="btn-icon">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+                                            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
+                                        </svg>
+                                    </button>
+                                    <button @click="toggleEdit('wallet')" class="btn-icon">
+                                        <svg x-show="!settings.editing.wallet" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                                        </svg>
+                                        <svg x-show="settings.editing.wallet" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Custom Token Address (if custom selected) -->
+                        <div x-show="settings.tokenSymbol === 'CUSTOM'" class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Token Contract Address</label>
+                            <input 
+                                type="text"
+                                x-model="settings.tokenAddress"
+                                class="setting-input"
+                                placeholder="Enter token contract address">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overlay Configuration -->
+                <div class="card rounded-xl shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-600">
+                        <h2 class="text-lg font-semibold text-white">🎨 Overlay Configuration</h2>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <!-- Position & Duration -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Position</label>
+                                <select x-model="settings.position" @change="updatePreviewConfig()" class="setting-input">
+                                    <option value="top-left">Top Left</option>
+                                    <option value="top-right">Top Right</option>
+                                    <option value="bottom-left">Bottom Left</option>
+                                    <option value="bottom-right">Bottom Right</option>
+                                    <option value="center">Center</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Duration (seconds)</label>
+                                <input 
+                                    type="number" 
+                                    x-model="settings.displayDuration" 
+                                    @input="updatePreviewConfig()"
+                                    class="setting-input" 
+                                    min="1" 
+                                    max="30" 
+                                    step="1">
+                            </div>
+                        </div>
+
+                        <!-- Theme Selection -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Theme</label>
+                            <div class="grid grid-cols-1 gap-3">
+                                <template x-for="theme in overlayThemes" :key="theme.id">
+                                    <button @click="settings.theme = theme.id; updatePreviewConfig()"
+                                            :class="settings.theme === theme.id ? 'ring-2 ring-blue-500 bg-blue-900/50' : 'hover:bg-gray-700'"
+                                            class="p-3 border rounded-lg text-left transition-all">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="flex space-x-1">
+                                                <template x-for="color in theme.colors" :key="color">
+                                                    <div class="w-4 h-4 rounded-full" :style="`background-color: ${color}`"></div>
+                                                </template>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="font-medium" x-text="theme.name"></div>
+                                                <div class="text-xs text-gray-400" x-text="theme.description"></div>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Donation Tiers -->
+                <div class="card rounded-xl shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-600">
+                        <h2 class="text-lg font-semibold">💰 Donation Tiers</h2>
+                        <p class="text-sm text-gray-300 mt-1">Set minimum amounts for different donation tiers</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <template x-for="tier in tiers" :key="tier.name">
+                                <div class="bg-gray-700 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                                                 :class="getTierColorClass(tier.name)">
+                                                <span class="text-white text-sm font-bold" x-text="tier.label.charAt(0)"></span>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium text-white" x-text="tier.label"></div>
+                                                <div class="text-xs text-gray-400" x-text="tier.description"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-gray-300 text-sm">Min: $</span>
+                                        <input type="number" x-model="tier.value" 
+                                               @input="updatePreviewConfig()"
+                                               class="setting-input w-20 text-center" 
+                                               min="0" step="1">
+                                        <span class="text-gray-300 text-sm" x-text="settings.tokenSymbol"></span>
+                                    </div>
+                                </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Overlay URL Generator -->
+                <div class="card rounded-xl shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-600">
+                        <h2 class="text-lg font-semibold text-white">🔗 Overlay URL</h2>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <p class="text-sm text-gray-600">Use this URL in your streaming software (OBS, Streamlabs, etc.):</p>
+                        <div class="bg-gray-700 border border-gray-600 rounded-lg p-4">
+                            <div class="font-mono text-sm break-all" x-text="generateOverlayUrl()"></div>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button @click="copyOverlayUrl()" class="btn-primary flex-1">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+                                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
+                                </svg>
+                                Copy URL
+                            </button>
+                            <button @click="openOverlayPreview()" class="btn-secondary">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Preview
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlay Tab -->
+        <div x-show="activeTab === 'overlay'" x-transition:enter="animate-fade-in">
+            <div class="card rounded-xl shadow-lg overflow-hidden h-[70vh]">
+                <div class="px-6 py-4 border-b border-gray-600">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-white">👁️ Live Overlay Preview</h2>
+                        <div class="flex space-x-2">
+                            <button @click="simulateDonation()" class="text-white hover:text-gray-200 text-sm font-medium">
+                                🧪 Test Donation
+                            </button>
+                            <button @click="refreshOverlayPreview()" class="text-white hover:text-gray-200 text-sm font-medium">
+                                🔄 Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <iframe 
+                    id="overlay-preview-iframe"
+                    :src="generateOverlayUrl() + '&debug=true'" 
+                    class="w-full h-full border-0" 
+                    title="Overlay Preview"
+                    @load="setupOverlayPreview()">
+                </iframe>
+            </div>
+        </div>
+
+        <!-- Help Tab -->
+        <div x-show="activeTab === 'help'" x-transition:enter="animate-fade-in">
+            <div class="space-y-8">
+                <!-- Quick Start Guide -->
+                <div class="card rounded-xl shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 bg-gradient-to-r from-green-500 to-teal-600">
+                        <h2 class="text-lg font-semibold text-white">🚀 Quick Start Guide</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <span class="text-2xl">⚙️</span>
+                                </div>
+                                <h3 class="font-semibold mb-2">1. Configure Settings</h3>
+                                <p class="text-sm text-gray-600">Set up your API key, wallet address, and customize your overlay appearance.</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <span class="text-2xl">🔗</span>
+                                </div>
+                                <h3 class="font-semibold mb-2">2. Add to OBS</h3>
+                                <p class="text-sm text-gray-600">Copy the overlay URL and add it as a Browser Source in your streaming software.</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <span class="text-2xl">🎉</span>
+                                </div>
+                                <h3 class="font-semibold mb-2">3. Start Streaming</h3>
+                                <p class="text-sm text-gray-600">Share your wallet address with viewers and watch donations appear live!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ -->
+                <div class="card rounded-xl shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-600">
+                        <h2 class="text-lg font-semibold text-white">❓ Frequently Asked Questions</h2>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <template x-for="faq in faqData" :key="faq.question">
+                            <div class="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
+                                <h3 class="font-semibold text-gray-200 mb-2" x-text="faq.question"></h3>
+                                <p class="text-gray-600 text-sm" x-html="faq.answer"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function dashboardApp() {
+            return {
+                // Core state
+                activeTab: 'dashboard',
+                backendConnected: false,
+                overlayConnected: false,
+                currentMode: 'manual',
+                pendingEvents: [],
+                pendingCount: 0,
+                approvedCount: 0,
+                totalAmount: 0,
+                sessionTime: '00:00',
+                sessionStart: Date.now(),
+                ws: null,
+                
+                // Wizard state
+                showWizard: false,
+                wizardStep: 0,
+                wizardSteps: ['Token', 'API & Wallet', 'Overlay', 'Tiers', 'Complete'],
+                wizardValidation: {},
+                
+                // Wallet data
+                walletAddressShort: 'Loading...',
+                walletAddressFull: 'Loading...',
+                
+                // Configuration
+                tabs: [
+                    { id: 'dashboard', name: 'Dashboard', icon: '🎛️' },
+                    { id: 'settings', name: 'Settings', icon: '⚙️' },
+                    { id: 'overlay', name: 'Preview', icon: '👁️' },
+                    { id: 'help', name: 'Help', icon: '❓' }
+                ],
+                
+                // Token presets (will be loaded from backend)
+                tokenPresets: [],
+                
+                // Overlay themes
+                overlayThemes: [
+                    { 
+                        id: 'neon', 
+                        name: 'Neon', 
+                        description: 'Bright cyberpunk colors',
+                        colors: ['#00ffff', '#ff00ff', '#ffff00']
+                    },
+                    { 
+                        id: 'minimal', 
+                        name: 'Minimal', 
+                        description: 'Clean and simple',
+                        colors: ['#ffffff', '#f8f9fa', '#dee2e6']
+                    },
+                    { 
+                        id: 'galaxy', 
+                        name: 'Galaxy', 
+                        description: 'Deep space vibes',
+                        colors: ['#4c1d95', '#7c3aed', '#a855f7']
+                    },
+                    { 
+                        id: 'fire', 
+                        name: 'Fire', 
+                        description: 'Hot red and orange',
+                        colors: ['#dc2626', '#ea580c', '#f59e0b']
+                    }
+                ],
+                
+                // Settings
+                settings: {
+                    tokenSymbol: 'AI16Z',
+                    tokenAddress: 'HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC',
+                    apiKey: 'your-api-key-here',
+                    apiKeyVisible: false,
+                    walletAddress: 'your-wallet-address-here',
+                    displayDuration: 5,
+                    position: 'bottom-right',
+                    theme: 'neon',
+                    editing: {
+                        apiKey: false,
+                        wallet: false,
+                        tokenAddress: false
+                    }
+                },
+                
+                // Tiers
+                tiers: [
+                    { name: 'mid', label: 'Mid', value: 1000, description: 'Medium donations with blue effects', colorClass: 'bg-blue-500' },
+                    { name: 'high', label: 'High', value: 10000, description: 'Large donations with purple effects', colorClass: 'bg-purple-500' },
+                    { name: 'whale', label: 'Whale', value: 100000, description: 'Massive donations with special animations', colorClass: 'bg-orange-500' }
+                ],
+
+                // FAQ data
+                faqData: [
+                    {
+                        question: "How do I add the overlay to OBS?",
+                        answer: "1. In OBS, click the + in Sources<br>2. Add Browser Source<br>3. Copy the overlay URL from Settings tab<br>4. Set Width: 1920, Height: 1080"
+                    },
+                    {
+                        question: "Which tokens are supported?",
+                        answer: "Any token on supported blockchains! Choose from presets like SOL, ETH, USDC, or add your own custom token."
+                    },
+                    {
+                        question: "Do I need to run a backend server?",
+                        answer: "Yes, the backend monitors blockchain transactions. Make sure it's running before streaming."
+                    },
+                    {
+                        question: "How do donation tiers work?",
+                        answer: "Different donation amounts trigger different visual effects. Configure thresholds in Settings → Donation Tiers."
+                    },
+                    {
+                        question: "Can I customize the appearance?",
+                        answer: "Yes! Choose from built-in themes, adjust positions, durations, and colors to match your stream aesthetic."
+                    }
+                ],
+
+                async init() {
+                    console.log('🎛️ Universal Crypto Stream Overlay starting...');
+                    
+                    // Load token presets from backend first
+                    await this.loadTokenPresets();
+                    
+                    // Check if this is first run
+                    const hasConfig = localStorage.getItem('overlaySettings');
+                    if (!hasConfig) {
+                        this.showWizard = true;
+                    } else {
+                        this.loadSettings();
+                    }
+                    
+                    await this.checkBackend();
+                    this.connectWebSocket();
+                    this.startSessionTimer();
+                    this.setupPeriodicRefresh();
+                    this.loadWalletAddress();
+                },
+
+                async loadTokenPresets() {
+                    try {
+                        const response = await fetch('http://localhost:8000/api/tokens/popular');
+                        if (response.ok) {
+                            const tokens = await response.json();
+                            this.tokenPresets = tokens.map(token => ({
+                                symbol: token.symbol,
+                                name: token.name || token.symbol,
+                                icon: token.logo ? '🪙' : '💰', // Use coin emoji as fallback
+                                logo: token.logo,
+                                network: this.guessNetwork(token.mint),
+                                mint: token.mint,
+                                decimals: token.decimals
+                            }));
+                            
+                            // Add custom option
+                            this.tokenPresets.push({
+                                symbol: 'CUSTOM',
+                                name: 'Custom Token',
+                                icon: '🔧',
+                                network: 'Custom'
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Failed to load token presets:', error);
+                        // Fallback to hardcoded presets
+                        this.tokenPresets = [
+                            { symbol: 'AI16Z', name: 'AI16Z', icon: '🤖', network: 'Solana' },
+                            { symbol: 'SOL', name: 'Solana', icon: '◎', network: 'Solana' },
+                            { symbol: 'USDC', name: 'USD Coin', icon: '💵', network: 'Solana' },
+                            { symbol: 'CUSTOM', name: 'Custom Token', icon: '🔧', network: 'Custom' }
+                        ];
+                    }
+                },
+
+                guessNetwork(mintAddress) {
+                    if (mintAddress === 'So11111111111111111111111111111111111111112') {
+                        return 'Solana';
+                    }
+                    if (mintAddress && mintAddress.length > 40) {
+                        return 'Solana'; // Solana mint addresses are typically 44 characters
+                    }
+                    if (mintAddress && mintAddress.startsWith('0x')) {
+                        return 'Ethereum';
+                    }
+                    return 'Unknown';
+                },
+
+                // Wizard functions
+                nextWizardStep() {
+                    if (this.wizardStep === 4) {
+                        this.completeWizard();
+                        return;
+                    }
+                    
+                    if (this.validateWizardStep()) {
+                        this.wizardStep++;
+                    }
+                },
+
+                canProceedWizard() {
+                    return this.validateWizardStep();
+                },
+
+                validateWizardStep() {
+                    this.wizardValidation = {};
+                    
+                    switch (this.wizardStep) {
+                        case 0:
+                            return this.settings.tokenSymbol !== '';
+                        case 1:
+                            let valid = true;
+                            if (!this.settings.apiKey || this.settings.apiKey.length < 10) {
+                                this.wizardValidation.apiKey = 'API key must be at least 10 characters';
+                                valid = false;
+                            }
+                            if (!this.settings.walletAddress || this.settings.walletAddress.length < 20) {
+                                this.wizardValidation.walletAddress = 'Please enter a valid wallet address';
+                                valid = false;
+                            }
+                            return valid;
+                        case 2:
+                        case 3:
+                        case 4:
+                            return true;
+                        default:
+                            return false;
+                    }
+                },
+
+                selectTokenPreset(preset) {
+                    this.settings.tokenSymbol = preset.symbol;
+                    if (preset.symbol !== 'CUSTOM' && preset.symbol === 'AI16Z') {
+                        this.settings.tokenAddress = 'HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC';
+                    }
+                },
+
+                completeWizard() {
+                    this.showWizard = false;
+                    this.saveSettings();
+                    this.showToast('Setup complete! Your overlay is ready to use.', 'success');
+                },
+
+                skipWizard() {
+                    this.showWizard = false;
+                    this.loadDefaultSettings();
+                },
+
+                // Settings management
+                loadDefaultSettings() {
+                    this.settings = {
+                        tokenSymbol: 'AI16Z',
+                        tokenAddress: 'HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC',
+                        apiKey: 'your-api-key-here',
+                        apiKeyVisible: false,
+                        walletAddress: 'your-wallet-address-here',
+                        displayDuration: 5,
+                        position: 'bottom-right',
+                        theme: 'neon',
+                        editing: {
+                            apiKey: false,
+                            wallet: false,
+                            tokenAddress: false
+                        }
+                    };
+                },
+
+                saveSettings() {
+                    localStorage.setItem('overlaySettings', JSON.stringify({
+                        settings: this.settings,
+                        tiers: this.tiers
+                    }));
+                },
+
+                loadSettings() {
+                    const saved = localStorage.getItem('overlaySettings');
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        this.settings = { ...this.settings, ...data.settings };
+                        this.tiers = data.tiers || this.tiers;
+                    }
+                },
+
+                async importSettings(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    try {
+                        const text = await file.text();
+                        const data = JSON.parse(text);
+                        
+                        if (data.settings) {
+                            this.settings = { ...this.settings, ...data.settings };
+                        }
+                        if (data.tiers) {
+                            this.tiers = data.tiers;
+                        }
+                        
+                        this.saveSettings();
+                        this.showToast('Settings imported successfully!', 'success');
+                        
+                        // Reset file input
+                        event.target.value = '';
+                    } catch (error) {
+                        this.showToast('Failed to import settings. Invalid file format.', 'error');
+                    }
+                },
+
+                exportSettings() {
+                    const data = {
+                        version: '1.0',
+                        timestamp: new Date().toISOString(),
+                        settings: {
+                            ...this.settings,
+                            apiKey: '***REDACTED***' // Don't export sensitive data
+                        },
+                        tiers: this.tiers,
+                        metadata: {
+                            tokenSymbol: this.settings.tokenSymbol,
+                            theme: this.settings.theme,
+                            position: this.settings.position
+                        }
+                    };
+                    
+                    this.downloadJSON(data, `overlay-settings-${this.settings.tokenSymbol.toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`);
+                    this.showToast('Settings exported successfully!', 'success');
+                },
+
+                resetToDefaults() {
+                    if (confirm('Reset all settings to defaults? This cannot be undone.')) {
+                        this.loadDefaultSettings();
+                        this.saveSettings();
+                        this.showToast('Settings reset to defaults', 'success');
+                    }
+                },
+
+                // Backend connection
+                async checkBackend() {
+                    try {
+                        const response = await fetch('http://localhost:8000/health');
+                        if (response.ok) {
+                            this.backendConnected = true;
+                            await this.loadInitialData();
+                        } else {
+                            this.backendConnected = false;
+                        }
+                    } catch (error) {
+                        this.backendConnected = false;
+                    }
+                },
+
+                connectWebSocket() {
+                    if (this.ws) return;
+                    
+                    const wsUrl = 'ws://localhost:8000/ws/dashboard';
+                    this.ws = new WebSocket(wsUrl);
+                    
+                    this.ws.onopen = () => {
+                        this.overlayConnected = true;
+                    };
+                    
+                    this.ws.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        this.handleWebSocketMessage(data);
+                    };
+                    
+                    this.ws.onclose = () => {
+                        this.ws = null;
+                        this.overlayConnected = false;
+                        setTimeout(() => this.connectWebSocket(), 3000);
+                    };
+                },
+
+                handleWebSocketMessage(data) {
+                    switch (data.type) {
+                        case 'dashboard_init':
+                            this.pendingEvents = data.pending_events || [];
+                            this.currentMode = data.auto_mode ? 'auto' : 'manual';
+                            this.updateStats();
+                            break;
+                        case 'new_event':
+                            this.pendingEvents.unshift(data.event);
+                            this.updateStats();
+                            break;
+                        case 'event_approved':
+                            this.removeEventFromPending(data.event_id);
+                            this.approvedCount++;
+                            this.updateStats();
+                            break;
+                        case 'event_skipped':
+                            this.removeEventFromPending(data.event_id);
+                            this.updateStats();
+                            break;
+                        case 'events_cleared':
+                            this.pendingEvents = [];
+                            this.updateStats();
+                            break;
+                    }
+                },
+
+                async loadInitialData() {
+                    try {
+                        const response = await fetch('http://localhost:8000/api/events/pending');
+                        if (response.ok) {
+                            this.pendingEvents = await response.json();
+                            this.updateStats();
+                        }
+                    } catch (error) {
+                        console.error('Error loading initial data:', error);
+                    }
+                },
+
+                // Actions
+                async approveEvent(eventId) {
+                    await this.moderateEvent(eventId, 'approve');
+                },
+
+                async skipEvent(eventId) {
+                    await this.moderateEvent(eventId, 'skip');
+                },
+
+                async moderateEvent(eventId, action) {
+                    if (!this.backendConnected) {
+                        this.showToast('Backend not connected!', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch('http://localhost:8000/api/events/action', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                event_id: eventId,
+                                action: action
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`Failed to ${action} event`);
+                        }
+                    } catch (error) {
+                        this.showToast(`Error ${action}ing event: ${error.message}`, 'error');
+                    }
+                },
+
+                async setMode(mode) {
+                    this.currentMode = mode;
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({
+                            type: 'toggle_auto',
+                            moderator: 'dashboard'
+                        }));
+                    }
+                },
+
+                async approveAll() {
+                    if (this.pendingEvents.length === 0) return;
+                    if (!confirm(`Approve all ${this.pendingEvents.length} pending donations?`)) return;
+                    
+                    for (const event of this.pendingEvents) {
+                        await this.moderateEvent(event.id, 'approve');
+                    }
+                },
+
+                async skipAll() {
+                    if (this.pendingEvents.length === 0) return;
+                    if (!confirm(`Skip all ${this.pendingEvents.length} pending donations?`)) return;
+                    
+                    for (const event of this.pendingEvents) {
+                        await this.moderateEvent(event.id, 'skip');
+                    }
+                },
+
+                async clearEvents() {
+                    if (!confirm('Clear all events? This cannot be undone.')) return;
+                    
+                    try {
+                        const response = await fetch('http://localhost:8000/api/events', {
+                            method: 'DELETE'
+                        });
+                        
+                        if (response.ok) {
+                            this.showToast('All events cleared', 'success');
+                        }
+                    } catch (error) {
+                        this.showToast('Error clearing events', 'error');
+                    }
+                },
+
+                async refreshData() {
+                    await this.loadInitialData();
+                    this.showToast('Data refreshed', 'success');
+                },
+
+                simulateDonation() {
+                    const testDonation = {
+                        id: 'test-' + Date.now(),
+                        signature: 'test-signature',
+                        sender: 'TestWallet' + Math.random().toString(36).slice(2, 8),
+                        amount: Math.floor(Math.random() * 50000) + 500,
+                        memo: 'Test donation message! Thanks for the great stream!',
+                        tier: 'mid',
+                        created_at: Math.floor(Date.now() / 1000),
+                        auto_filtered: false
+                    };
+                    
+                    this.pendingEvents.unshift(testDonation);
+                    this.updateStats();
+                    this.showToast('Test donation created!', 'success');
+                },
+
+                // Utility functions
+                loadWalletAddress() {
+                    const fullAddress = this.settings.walletAddress;
+                    this.walletAddressFull = fullAddress;
+                    this.walletAddressShort = fullAddress.length > 20 ? 
+                        `${fullAddress.slice(0, 8)}...${fullAddress.slice(-4)}` : fullAddress;
+                },
+
+                updateStats() {
+                    this.pendingCount = this.pendingEvents.length;
+                    this.totalAmount = this.pendingEvents.reduce((sum, event) => sum + event.amount, 0);
+                },
+
+                startSessionTimer() {
+                    setInterval(() => {
+                        const elapsed = Math.floor((Date.now() - this.sessionStart) / 1000);
+                        const minutes = Math.floor(elapsed / 60);
+                        const seconds = elapsed % 60;
+                        this.sessionTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    }, 1000);
+                },
+
+                setupPeriodicRefresh() {
+                    setInterval(async () => {
+                        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+                            await this.checkBackend();
+                        }
+                    }, 30000);
+                },
+
+                removeEventFromPending(eventId) {
+                    this.pendingEvents = this.pendingEvents.filter(e => e.id !== eventId);
+                    this.updateStats();
+                },
+
+                // UI functions
+                toggleApiKeyVisibility() {
+                    this.settings.apiKeyVisible = !this.settings.apiKeyVisible;
+                },
+
+                toggleEdit(field) {
+                    this.settings.editing[field] = !this.settings.editing[field];
+                    if (!this.settings.editing[field]) {
+                        this.saveSettings();
+                    }
+                },
+
+                onTokenChange() {
+                    this.loadWalletAddress();
+                    this.saveSettings();
+                },
+
+                getTierBadgeClass(tier) {
+                    const classes = {
+                        'low': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800',
+                        'mid': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800',
+                        'high': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800',
+                        'whale': 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800'
+                    };
+                    return classes[tier] || classes['low'];
+                },
+
+                getTierColorClass(tier) {
+                    const classes = {
+                        'low': 'bg-green-500',
+                        'mid': 'bg-blue-500',
+                        'high': 'bg-purple-500', 
+                        'whale': 'bg-orange-500'
+                    };
+                    return classes[tier] || 'bg-green-500';
+                },
+
+                getTokenNetwork() {
+                    const preset = this.tokenPresets.find(p => p.symbol === this.settings.tokenSymbol);
+                    return preset ? preset.network : 'Custom';
+                },
+
+                generateOverlayUrl() {
+                    const params = new URLSearchParams({
+                        token: this.settings.tokenSymbol,
+                        position: this.settings.position,
+                        duration: this.settings.displayDuration * 1000,
+                        theme: this.settings.theme,
+                        host: 'localhost',
+                        port: '8000'
+                    });
+                    return `${window.location.origin}/overlay.html?${params.toString()}`;
+                },
+
+                copyOverlayUrl() {
+                    this.copyToClipboard(this.generateOverlayUrl(), 'Overlay URL');
+                },
+
+                openOverlayPreview() {
+                    window.open(this.generateOverlayUrl(), '_blank', 'width=800,height=600');
+                },
+
+                refreshOverlayPreview() {
+                    const iframe = document.getElementById('overlay-preview-iframe');
+                    if (iframe) {
+                        iframe.src = iframe.src;
+                    }
+                },
+
+                setupOverlayPreview() {
+                    // Set up PostMessage listener for overlay communication
+                    if (!this.overlayPreviewSetup) {
+                        window.addEventListener('message', (event) => {
+                            if (event.data && event.data.type === 'overlay_ready') {
+                                console.log('Overlay preview is ready for configuration updates');
+                                this.sendConfigToPreview();
+                            }
+                        });
+                        this.overlayPreviewSetup = true;
+                    }
+                    
+                    // Send initial config after a short delay to ensure iframe is ready
+                    setTimeout(() => {
+                        this.sendConfigToPreview();
+                    }, 500);
+                },
+
+                sendConfigToPreview() {
+                    const iframe = document.getElementById('overlay-preview-iframe');
+                    if (iframe && iframe.contentWindow) {
+                        const config = {
+                            token: this.settings.tokenSymbol,
+                            position: this.settings.position,
+                            duration: this.settings.displayDuration * 1000,
+                            theme: this.settings.theme,
+                            tiers: Object.fromEntries(this.tiers.map(tier => [tier.name, tier.value]))
+                        };
+                        
+                        iframe.contentWindow.postMessage({
+                            type: 'config_update',
+                            config: config
+                        }, '*');
+                        console.log('Sent config update to overlay preview:', config);
+                    }
+                },
+
+                // Watch for setting changes and update preview immediately
+                updatePreviewConfig() {
+                    this.sendConfigToPreview();
+                    this.saveSettings();
+                },
+
+                async copyWalletAddress() {
+                    await this.copyToClipboard(this.walletAddressFull, 'Wallet address');
+                },
+
+                async copyToClipboard(text, label) {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        this.showToast(`${label} copied to clipboard!`, 'success');
+                    } catch (error) {
+                        this.showToast(`Failed to copy ${label.toLowerCase()}`, 'error');
+                    }
+                },
+
+                formatCurrency(amount) {
+                    return '$' + amount.toLocaleString();
+                },
+
+                formatTime(timestamp) {
+                    return new Date(timestamp * 1000).toLocaleTimeString();
+                },
+
+                downloadJSON(data, filename) {
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                },
+
+                showToast(message, type) {
+                    const toast = document.createElement('div');
+                    toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                    } text-white font-medium animate-slide-in`;
+                    toast.textContent = message;
+                    document.body.appendChild(toast);
+                    
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 3000);
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom button and form styles -->
+    <style>
+        .btn-primary {
+            background-color: var(--accent-blue) !important;
+            color: white !important;
+            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+        }
+        
+        .btn-secondary {
+            background-color: var(--bg-card) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors;
+        }
+        
+        .btn-success {
+            background-color: var(--accent-green) !important;
+            color: white !important;
+            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+        }
+        
+        .btn-danger {
+            background-color: var(--accent-red) !important;
+            color: white !important;
+            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+        }
+        
+        .btn-warning {
+            background-color: var(--accent-orange) !important;
+            color: white !important;
+            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-colors;
+        }
+        
+        .btn-success-sm {
+            background-color: var(--accent-green) !important;
+            color: white !important;
+            @apply inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded hover:opacity-90 transition-colors;
+        }
+        
+        .btn-danger-sm {
+            background-color: var(--accent-red) !important;
+            color: white !important;
+            @apply inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded hover:opacity-90 transition-colors;
+        }
+        
+        .btn-icon {
+            color: var(--text-muted) !important;
+            @apply inline-flex items-center justify-center w-6 h-6 bg-transparent hover:bg-gray-600 rounded transition-colors;
+        }
+        
+        .btn-copy {
+            background-color: var(--bg-card) !important;
+            border-color: var(--border-color) !important;
+            color: var(--accent-green) !important;
+            @apply inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border hover:bg-gray-600 transition-colors;
+        }
+        
+        .setting-input {
+            background-color: var(--bg-card) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+            @apply block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm;
+        }
+        
+        .setting-input:disabled {
+            background-color: var(--bg-primary) !important;
+            color: var(--text-muted) !important;
+            @apply cursor-not-allowed;
+        }
+        
+        .wizard-input {
+            background-color: var(--bg-card) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+            @apply block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm transition-colors;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Crypto Stream Overlay</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: white;
+        }
+        
+        #overlay {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        #donation-toast {
+            position: absolute;
+            bottom: 80px;
+            right: 50px;
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px 24px;
+            min-width: 320px;
+            max-width: 450px;
+            border-left: 4px solid var(--tier-color);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            
+            transform: translateY(150px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        #donation-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .donation-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .tier-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--tier-color);
+            color: white;
+        }
+        
+        .amount {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--tier-color);
+            margin-left: auto;
+        }
+        
+        .memo {
+            font-size: 16px;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+        
+        .meta {
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .media-container {
+            position: absolute;
+            left: -80px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--tier-color);
+        }
+        
+        .media-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Tier Colors */
+        .tier-low { --tier-color: #10b981; }
+        .tier-mid { --tier-color: #3b82f6; }
+        .tier-high { --tier-color: #a855f7; }
+        .tier-whale { --tier-color: #f59e0b; }
+        
+        /* Debug Status */
+        #debug-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: 'Monaco', monospace;
+        }
+        
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        .connected { background: #10b981; }
+        .disconnected { background: #ef4444; }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .pulse {
+            animation: pulse 0.6s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <!-- Debug status (hidden in production) -->
+        <div id="debug-status">
+            <span class="status-dot disconnected" id="status-dot"></span>
+            <span id="status-text">Connecting...</span>
+        </div>
+        
+        <!-- Donation toast notification -->
+        <div id="donation-toast" class="tier-mid">
+            <div class="media-container">
+                <img src="media/alert.gif" alt="notification" id="notification-media">
+            </div>
+            <div class="donation-header">
+                <span class="tier-badge" id="tier-badge">
+                    <span id="tier-text">MID</span>
+                </span>
+                <span class="amount" id="donation-amount">$5,000 AI16Z</span>
+            </div>
+            <div class="memo" id="donation-memo">Thanks for the amazing stream!</div>
+            <div class="meta">
+                <span id="sender-info">Donor123...abc</span>
+                <span id="timestamp">Just now</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio elements -->
+    <audio id="notification-sound" preload="auto">
+        <source src="media/notification.mp3" type="audio/mpeg">
+        <source src="media/alert.gif" type="audio/ogg"> <!-- Fallback -->
+    </audio>
+
+    <script>
+        class StreamOverlay {
+            constructor() {
+                // Configuration from URL params or defaults
+                this.config = this.loadConfig();
+                
+                this.ws = null;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = this.config.maxReconnects;
+                this.reconnectDelay = this.config.reconnectDelay;
+                
+                this.elements = {
+                    toast: document.getElementById('donation-toast'),
+                    amount: document.getElementById('donation-amount'),
+                    memo: document.getElementById('donation-memo'),
+                    senderInfo: document.getElementById('sender-info'),
+                    timestamp: document.getElementById('timestamp'),
+                    tierBadge: document.getElementById('tier-badge'),
+                    tierText: document.getElementById('tier-text'),
+                    media: document.getElementById('notification-media'),
+                    sound: document.getElementById('notification-sound'),
+                    statusDot: document.getElementById('status-dot'),
+                    statusText: document.getElementById('status-text')
+                };
+                
+                this.connect();
+                this.setupAudioUnlock();
+            }
+            
+            loadConfig() {
+                const params = new URLSearchParams(window.location.search);
+                
+                return {
+                    // WebSocket connection - use window.location properties to avoid URL param contamination
+                    wsHost: params.get('host') || window.location.hostname || 'localhost',
+                    wsPort: params.get('port') || '8000',
+                    
+                    // Display settings
+                    position: params.get('position') || 'bottom-right',
+                    displayDuration: parseInt(params.get('duration')) || 5000,
+                    
+                    // Connection settings  
+                    maxReconnects: parseInt(params.get('maxReconnects')) || 10,
+                    reconnectDelay: parseInt(params.get('reconnectDelay')) || 3000,
+                    
+                    // Media settings
+                    mediaUrl: params.get('media') || 'media/alert.gif',
+                    soundUrl: params.get('sound') || 'media/notification.mp3',
+                    
+                    // Debug mode
+                    debug: params.has('debug') || params.has('demo'),
+                    demo: params.has('demo'),
+                    
+                    // OBS mode (hides debug info faster)
+                    obsMode: params.has('obs') || window.obsstudio
+                };
+            }
+            
+            connect() {
+                const wsUrl = `ws://${this.config.wsHost}:${this.config.wsPort}/ws/overlay`;
+                console.log('Connecting to:', wsUrl);
+                
+                this.ws = new WebSocket(wsUrl);
+                
+                this.ws.onopen = () => {
+                    console.log('✅ Connected to overlay WebSocket');
+                    this.updateStatus(true);
+                    this.reconnectAttempts = 0;
+                };
+                
+                this.ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        this.handleMessage(data);
+                    } catch (error) {
+                        console.error('Error parsing WebSocket message:', error);
+                    }
+                };
+                
+                this.ws.onclose = () => {
+                    console.log('❌ WebSocket disconnected');
+                    this.updateStatus(false);
+                    this.scheduleReconnect();
+                };
+                
+                this.ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    this.updateStatus(false);
+                };
+            }
+            
+            handleMessage(data) {
+                console.log('Received message:', data);
+                
+                switch(data.type) {
+                    case 'connected':
+                        console.log('Overlay connected to backend');
+                        break;
+                        
+                    case 'show_donation':
+                        this.showDonation(data.event);
+                        break;
+                        
+                    default:
+                        console.log('Unknown message type:', data.type);
+                }
+            }
+            
+            showDonation(event, skipSound = false) {
+                console.log('Showing donation:', event);
+                
+                // Update content with token-agnostic display
+                const tokenSymbol = event.token || 'Token';
+                this.elements.amount.textContent = `$${event.amount.toLocaleString()} ${tokenSymbol}`;
+                this.elements.memo.textContent = event.memo || 'Thank you!';
+                this.elements.senderInfo.textContent = `${event.sender.slice(0, 8)}...${event.sender.slice(-4)}`;
+                this.elements.timestamp.textContent = 'Just now';
+                
+                // Update tier
+                const tier = event.tier || 'low';
+                this.elements.tierText.textContent = tier.toUpperCase();
+                
+                // Update classes
+                this.elements.toast.className = `tier-${tier}`;
+                
+                // Play sound only if not a preview/config update
+                if (!skipSound && !event.signature?.startsWith('config_preview_')) {
+                    this.playNotificationSound();
+                }
+                
+                // Show toast with animation
+                this.elements.toast.classList.add('show', 'pulse');
+                
+                // Hide after configured duration
+                setTimeout(() => {
+                    this.elements.toast.classList.remove('show');
+                    setTimeout(() => {
+                        this.elements.toast.classList.remove('pulse');
+                    }, 400);
+                }, this.config.displayDuration);
+            }
+            
+            playNotificationSound() {
+                try {
+                    this.elements.sound.currentTime = 0;
+                    this.elements.sound.play().catch(e => {
+                        console.log('Audio play failed (this is normal until user interaction):', e.message);
+                    });
+                } catch (error) {
+                    console.log('Audio error:', error.message);
+                }
+            }
+            
+            setupAudioUnlock() {
+                // Unlock audio on first user interaction
+                const unlockAudio = () => {
+                    this.elements.sound.play().then(() => {
+                        this.elements.sound.pause();
+                        this.elements.sound.currentTime = 0;
+                        console.log('✅ Audio unlocked');
+                    }).catch(() => {
+                        console.log('Audio unlock failed');
+                    });
+                    
+                    document.removeEventListener('click', unlockAudio);
+                    document.removeEventListener('touchstart', unlockAudio);
+                };
+                
+                document.addEventListener('click', unlockAudio);
+                document.addEventListener('touchstart', unlockAudio);
+            }
+            
+            updateStatus(connected) {
+                if (connected) {
+                    this.elements.statusDot.className = 'status-dot connected';
+                    this.elements.statusText.textContent = 'Connected';
+                } else {
+                    this.elements.statusDot.className = 'status-dot disconnected';
+                    this.elements.statusText.textContent = 'Disconnected';
+                }
+            }
+            
+            scheduleReconnect() {
+                if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                    console.log('Max reconnect attempts reached');
+                    this.elements.statusText.textContent = 'Connection failed';
+                    return;
+                }
+                
+                this.reconnectAttempts++;
+                this.elements.statusText.textContent = `Reconnecting... (${this.reconnectAttempts})`;
+                
+                setTimeout(() => {
+                    this.connect();
+                }, this.reconnectDelay);
+            }
+        }
+        
+        // Initialize overlay when page loads
+        window.addEventListener('load', () => {
+            console.log('🚀 Universal Crypto Stream Overlay starting...');
+            const overlay = new StreamOverlay();
+            
+            // Handle configuration updates from dashboard preview
+            window.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'config_update') {
+                    console.log('Received config update:', event.data.config);
+                    overlay.updateConfig(event.data.config);
+                } else if (event.data && event.data.type === 'test_donation') {
+                    console.log('Received test donation:', event.data.event);
+                    overlay.showDonation(event.data.event);
+                }
+            });
+            
+            // Notify parent that overlay is ready
+            try {
+                window.parent.postMessage({ type: 'overlay_ready' }, '*');
+            } catch (e) {
+                // Ignore errors if not in iframe
+            }
+            
+            // Add updateConfig method to overlay
+            overlay.updateConfig = function(newConfig) {
+                console.log('Updating overlay configuration:', newConfig);
+                
+                // Update position
+                if (newConfig.position && newConfig.position !== this.config.position) {
+                    this.config.position = newConfig.position;
+                    this.updatePosition();
+                }
+                
+                // Update duration
+                if (newConfig.duration) {
+                    this.config.displayDuration = newConfig.duration;
+                }
+                
+                // Update theme and trigger preview (skip sound to avoid double notifications)
+                if (newConfig.theme || newConfig.token) {
+                    setTimeout(() => {
+                        this.showDonation({
+                            signature: "config_preview_" + Date.now(),
+                            sender: "ConfigPreview" + Math.random().toString(36).slice(2, 6),
+                            amount: 5000,
+                            memo: `Preview: ${newConfig.token || 'Token'} donation with ${newConfig.theme || 'default'} theme!`,
+                            tier: "mid"
+                        }, true); // skipSound = true
+                    }, 100);
+                }
+            };
+            
+            // Add position update method
+            overlay.updatePosition = function() {
+                const toast = this.elements.toast;
+                const position = this.config.position;
+                
+                // Reset position classes
+                toast.style.top = 'auto';
+                toast.style.bottom = 'auto';
+                toast.style.left = 'auto';
+                toast.style.right = 'auto';
+                toast.style.transform = 'none';
+                
+                switch(position) {
+                    case 'top-left':
+                        toast.style.top = '50px';
+                        toast.style.left = '50px';
+                        break;
+                    case 'top-right':
+                        toast.style.top = '50px';
+                        toast.style.right = '50px';
+                        break;
+                    case 'bottom-left':
+                        toast.style.bottom = '50px';
+                        toast.style.left = '50px';
+                        break;
+                    case 'bottom-right':
+                        toast.style.bottom = '50px';
+                        toast.style.right = '50px';
+                        break;
+                    case 'center':
+                        toast.style.top = '50%';
+                        toast.style.left = '50%';
+                        toast.style.transform = 'translate(-50%, -50%)';
+                        break;
+                }
+            };
+            
+            // Hide debug status based on mode
+            if (overlay.config.obsMode) {
+                setTimeout(() => {
+                    document.getElementById('debug-status').style.display = 'none';
+                }, 2000);
+            } else if (!overlay.config.debug) {
+                setTimeout(() => {
+                    document.getElementById('debug-status').style.opacity = '0.3';
+                }, 10000);
+            }
+            
+            // Demo mode for testing
+            if (overlay.config.demo) {
+                setTimeout(() => {
+                    console.log('🎭 Demo mode: showing test donation');
+                    overlay.showDonation({
+                        amount: 5000,
+                        memo: "This is a demo donation for testing the overlay!",
+                        sender: "DemoWallet123456789",
+                        tier: "mid"
+                    });
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
