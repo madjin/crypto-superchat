@@ -14,6 +14,8 @@
             background: transparent;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             color: white;
+            margin: 0;
+            padding: 0;
         }
         
         #overlay {
@@ -23,22 +25,45 @@
             pointer-events: none;
         }
         
+        /* Responsive toast positioning */
         #donation-toast {
             position: absolute;
-            bottom: 80px;
-            right: 50px;
+            /* Position will be set dynamically by JavaScript */
             background: rgba(17, 24, 39, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 16px;
-            padding: 20px 24px;
-            min-width: 320px;
-            max-width: 450px;
+            padding: clamp(16px, 2vw, 24px);
+            min-width: min(320px, 90vw);
+            max-width: min(450px, 90vw);
             border-left: 4px solid var(--tier-color);
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             
             transform: translateY(150px);
             opacity: 0;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        /* Responsive scaling for different browser source sizes */
+        @media (max-width: 800px) {
+            #donation-toast {
+                bottom: min(40px, 5vh);
+                right: min(20px, 3vw);
+                min-width: min(280px, 85vw);
+                max-width: min(350px, 85vw);
+                padding: clamp(12px, 1.5vw, 18px);
+                border-radius: 12px;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            #donation-toast {
+                bottom: min(20px, 3vh);
+                right: min(10px, 2vw);
+                min-width: min(240px, 80vw);
+                max-width: min(280px, 80vw);
+                padding: clamp(8px, 1vw, 14px);
+                border-radius: 8px;
+            }
         }
         
         #donation-toast.show {
@@ -59,7 +84,7 @@
             gap: 6px;
             padding: 4px 10px;
             border-radius: 8px;
-            font-size: 11px;
+            font-size: clamp(9px, 1.8vw, 11px);
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -68,36 +93,47 @@
         }
         
         .amount {
-            font-size: 20px;
+            font-size: clamp(16px, 3.5vw, 20px);
             font-weight: 700;
             color: var(--tier-color);
             margin-left: auto;
         }
         
         .memo {
-            font-size: 16px;
+            font-size: clamp(14px, 2.8vw, 16px);
             line-height: 1.4;
             margin-bottom: 10px;
             word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
         }
         
         .meta {
-            font-size: 12px;
+            font-size: clamp(10px, 2vw, 12px);
             color: rgba(255,255,255,0.7);
             display: flex;
             justify-content: space-between;
+            gap: 8px;
         }
         
         .media-container {
             position: absolute;
-            left: -80px;
+            left: min(-80px, -12vw);
             top: 50%;
             transform: translateY(-50%);
-            width: 64px;
-            height: 64px;
-            border-radius: 12px;
+            width: clamp(48px, 10vw, 64px);
+            height: clamp(48px, 10vw, 64px);
+            border-radius: clamp(8px, 1.5vw, 12px);
             overflow: hidden;
             background: var(--tier-color);
+        }
+        
+        @media (max-width: 500px) {
+            .media-container {
+                left: min(-60px, -10vw);
+                width: clamp(32px, 8vw, 48px);
+                height: clamp(32px, 8vw, 48px);
+            }
         }
         
         .media-container img {
@@ -205,6 +241,7 @@
                 
                 this.connect();
                 this.setupAudioUnlock();
+                this.applyPositioning();
             }
             
             loadConfig() {
@@ -234,6 +271,47 @@
                     // OBS mode (hides debug info faster)
                     obsMode: params.has('obs') || window.obsstudio
                 };
+            }
+            
+            applyPositioning() {
+                const toast = this.elements.toast;
+                const position = this.config.position;
+                
+                // Reset all positioning classes and styles
+                toast.style.top = 'auto';
+                toast.style.bottom = 'auto';
+                toast.style.left = 'auto';
+                toast.style.right = 'auto';
+                
+                // Apply position-specific styles
+                switch(position) {
+                    case 'top-left':
+                        toast.style.top = 'min(80px, 8vh)';
+                        toast.style.left = 'min(50px, 5vw)';
+                        break;
+                    case 'top-right':
+                        toast.style.top = 'min(80px, 8vh)';
+                        toast.style.right = 'min(50px, 5vw)';
+                        break;
+                    case 'bottom-left':
+                        toast.style.bottom = 'min(80px, 8vh)';
+                        toast.style.left = 'min(50px, 5vw)';
+                        break;
+                    case 'center':
+                        toast.style.top = '50%';
+                        toast.style.left = '50%';
+                        toast.style.transform = 'translate(-50%, -50%)';
+                        break;
+                    default: // bottom-right
+                        toast.style.bottom = 'min(80px, 8vh)';
+                        toast.style.right = 'min(50px, 5vw)';
+                        break;
+                }
+                
+                // Ensure transform includes positioning for center
+                if (position !== 'center') {
+                    toast.style.transform = 'translateY(150px)'; // Reset to default slide animation
+                }
             }
             
             connect() {
@@ -308,15 +386,34 @@
                     this.playNotificationSound();
                 }
                 
-                // Show toast with animation
-                this.elements.toast.classList.add('show', 'pulse');
+                // Show toast with animation - handle center positioning
+                if (this.config.position === 'center') {
+                    this.elements.toast.style.transform = 'translate(-50%, -50%) scale(0.8)';
+                    this.elements.toast.style.opacity = '0';
+                    this.elements.toast.classList.add('show', 'pulse');
+                    // Animate to full scale and opacity
+                    setTimeout(() => {
+                        this.elements.toast.style.transform = 'translate(-50%, -50%) scale(1)';
+                        this.elements.toast.style.opacity = '1';
+                    }, 50);
+                } else {
+                    this.elements.toast.classList.add('show', 'pulse');
+                }
                 
                 // Hide after configured duration
                 setTimeout(() => {
-                    this.elements.toast.classList.remove('show');
-                    setTimeout(() => {
-                        this.elements.toast.classList.remove('pulse');
-                    }, 400);
+                    if (this.config.position === 'center') {
+                        this.elements.toast.style.transform = 'translate(-50%, -50%) scale(0.8)';
+                        this.elements.toast.style.opacity = '0';
+                        setTimeout(() => {
+                            this.elements.toast.classList.remove('show', 'pulse');
+                        }, 400);
+                    } else {
+                        this.elements.toast.classList.remove('show');
+                        setTimeout(() => {
+                            this.elements.toast.classList.remove('pulse');
+                        }, 400);
+                    }
                 }, this.config.displayDuration);
             }
             
