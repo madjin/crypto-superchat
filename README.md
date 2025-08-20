@@ -1,1 +1,1 @@
-# chainchat
+# Crypto Superchats
