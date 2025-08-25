@@ -28,30 +28,42 @@
         
         /* Simple Dark Theme Variables */
         :root {
-            --bg-primary: #1f2937;    /* gray-800 */
-            --bg-secondary: #111827;  /* gray-900 */
-            --bg-card: #374151;       /* gray-700 */
-            --text-primary: #f9fafb;  /* gray-50 */
-            --text-secondary: #d1d5db; /* gray-300 */
-            --text-muted: #9ca3af;    /* gray-400 */
-            --border-color: #4b5563;  /* gray-600 */
-            --accent-blue: #3b82f6;   /* blue-500 */
+            --bg-secondary: #0f172a;  /* slate-900 */
+            --bg-primary:   #111827;  /* gray-900 */
+            --bg-card:      #1f2937;  /* gray-800 */
+            --bg-surface:   #0b1220;  /* deeper background */
+            --text-primary: #f8fafc;  /* slate-50 */
+            --text-secondary:#e5e7eb; /* gray-200 */
+            --text-muted:   #94a3b8;  /* slate-400 */
+            --border-color: #334155;  /* slate-700 */
+            --accent-blue:  #3b82f6;  /* blue-500 */
             --accent-green: #10b981;  /* emerald-500 */
-            --accent-red: #ef4444;    /* red-500 */
-            --accent-orange: #f97316; /* orange-500 */
+            --accent-red:   #ef4444;  /* red-500 */
+            --accent-orange:#f97316;  /* orange-500 */
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.3);
+            --shadow-lg: 0 16px 48px rgba(0,0,0,0.35);
+            --focus-ring: 0 0 0 3px rgba(59,130,246,0.25);
         }
         
         /* Global overrides for consistent dark theme */
         body {
             background-color: var(--bg-secondary) !important;
             color: var(--text-primary) !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            line-height: 1.5;
         }
         
         /* Card styling */
         .card {
-            background-color: var(--bg-primary) !important;
+            background-color: var(--bg-card) !important;
             border: 1px solid var(--border-color) !important;
             color: var(--text-primary) !important;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
         }
         
         /* Text overrides */
@@ -76,7 +88,14 @@
         
         /* Select arrow color fix */
         select {
-            background-image: url("data:image/svg+xml;charset=utf-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-color: var(--bg-primary) !important;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right .75rem center !important;
+            background-size: 1rem 1rem !important;
+            padding-right: 2.25rem !important;
+            border-radius: var(--radius-sm) !important;
         }
         
         /* Button styling */
@@ -408,7 +427,7 @@
                             :class="activeTab === tab.id 
                                 ? 'bg-gray-800 text-white shadow-sm' 
                                 : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'"
-                            class="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50">
+                            class="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50">
                             <span class="mr-2" x-text="tab.icon"></span>
                             <span x-text="tab.name"></span>
                         </button>
@@ -436,7 +455,7 @@
                 <!-- Mobile Menu Button -->
                 <div class="md:hidden" x-data="{ mobileMenuOpen: false }">
                     <button @click="mobileMenuOpen = !mobileMenuOpen"
-                            class="inline-flex items-center justify-center whitespace-nowrap rounded-md p-2 text-gray-400 hover:bg-gray-800 hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                            class="inline-flex items-center justify-center whitespace-nowrap rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900">
                         <span class="sr-only">Open main menu</span>
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -937,9 +956,9 @@
         </div>
 
         <!-- Overlay Tab -->
-        <div x-show="activeTab === 'overlay'" x-transition:enter="animate-fade-in" class="space-y-6">
+        <div x-show="false" x-transition:enter="animate-fade-in" class="space-y-6">
             <!-- Debug: Overlay Tab Active -->
-            <div class="bg-blue-500 text-white p-2 rounded" x-show="activeTab === 'overlay'">
+            <div class="bg-blue-500 text-white p-2 rounded" x-show="false">
                 Overlay tab is active! Debug: <span x-text="activeTab"></span>
             </div>
             
@@ -968,9 +987,9 @@
         </div>
 
         <!-- Help Tab -->
-        <div x-show="activeTab === 'help'" x-transition:enter="animate-fade-in" class="space-y-8">
+        <div x-show="false" x-transition:enter="animate-fade-in" class="space-y-8">
             <!-- Debug: Help Tab Active -->
-            <div class="bg-green-500 text-white p-2 rounded" x-show="activeTab === 'help'">
+            <div class="bg-green-500 text-white p-2 rounded" x-show="false">
                 Help tab is active! Debug: <span x-text="activeTab"></span>
             </div>
             
@@ -1053,9 +1072,7 @@
                 // Configuration
                 tabs: [
                     { id: 'dashboard', name: 'Dashboard', icon: '🎛️' },
-                    { id: 'settings', name: 'Settings', icon: '⚙️' },
-                    { id: 'overlay', name: 'Preview', icon: '👁️' },
-                    { id: 'help', name: 'Help', icon: '❓' }
+                    { id: 'settings', name: 'Settings', icon: '⚙️' }
                 ],
                 
                 
@@ -1721,123 +1738,110 @@
     
     <!-- Custom button and form styles -->
     <style>
-        .btn-primary {
-            background-color: var(--accent-blue) !important;
-            color: white !important;
-            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+        /* Card header normalization */
+        .card > .px-6.py-4 {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border-color);
         }
         
-        .btn-secondary {
-            background-color: var(--bg-card) !important;
-            border-color: var(--border-color) !important;
-            color: var(--text-primary) !important;
-            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors;
+        /* Buttons */
+        .btn-primary {
+            background-color: var(--accent-blue) !important;
+            color: #fff !important;
+            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+            padding: .5rem 1rem; font-size: .875rem; font-weight: 600; border-radius: var(--radius-sm);
+            border: 1px solid transparent; transition: background-color .2s, box-shadow .2s, opacity .2s;
         }
+        .btn-primary:hover { opacity: .92; }
+        .btn-primary:focus { outline: none; box-shadow: var(--focus-ring); }
+        .btn-primary:disabled { opacity:.6; cursor:not-allowed; }
+        
+        .btn-secondary {
+            background-color: var(--bg-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-secondary) !important;
+            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+            padding: .5rem 1rem; font-size: .875rem; font-weight: 600; border-radius: var(--radius-sm);
+            transition: background-color .2s, border-color .2s, box-shadow .2s;
+        }
+        .btn-secondary:hover { background-color: #243041 !important; border-color: #3b4a61 !important; }
+        .btn-secondary:focus { outline: none; box-shadow: var(--focus-ring); }
         
         .btn-success {
             background-color: var(--accent-green) !important;
-            color: white !important;
-            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+            color: #fff !important;
+            display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+            padding:.5rem 1rem; font-size:.875rem; font-weight:600; border-radius:var(--radius-sm);
+            border:1px solid transparent; transition: background-color .2s, box-shadow .2s, opacity .2s;
         }
+        .btn-success:hover { opacity:.92; }
+        .btn-success:focus { outline:none; box-shadow: var(--focus-ring);}
         
         .btn-danger {
             background-color: var(--accent-red) !important;
-            color: white !important;
-            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+            color:#fff !important;
+            display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+            padding:.5rem 1rem; font-size:.875rem; font-weight:600; border-radius:var(--radius-sm);
+            border:1px solid transparent; transition: background-color .2s, box-shadow .2s, opacity .2s;
         }
+        .btn-danger:hover { opacity:.92; }
+        .btn-danger:focus { outline:none; box-shadow: var(--focus-ring);}
         
         .btn-warning {
             background-color: var(--accent-orange) !important;
-            color: white !important;
-            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-colors;
+            color:#fff !important;
+            display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+            padding:.5rem 1rem; font-size:.875rem; font-weight:600; border-radius:var(--radius-sm);
+            border:1px solid transparent; transition: background-color .2s, box-shadow .2s, opacity .2s;
         }
+        .btn-warning:hover { opacity:.92; }
+        .btn-warning:focus { outline:none; box-shadow: var(--focus-ring);}
         
-        .btn-success-sm {
-            background-color: var(--accent-green) !important;
-            color: white !important;
-            @apply inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded hover:opacity-90 transition-colors;
-        }
+        .btn-success-sm { background-color: var(--accent-green) !important; color:#fff !important; display:inline-flex; align-items:center; gap:.25rem; padding:.375rem .75rem; font-size:.75rem; font-weight:600; border-radius:8px; transition: opacity .2s; }
+        .btn-success-sm:hover { opacity:.92; }
         
-        .btn-danger-sm {
-            background-color: var(--accent-red) !important;
-            color: white !important;
-            @apply inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded hover:opacity-90 transition-colors;
-        }
+        .btn-danger-sm { background-color: var(--accent-red) !important; color:#fff !important; display:inline-flex; align-items:center; gap:.25rem; padding:.375rem .75rem; font-size:.75rem; font-weight:600; border-radius:8px; transition: opacity .2s; }
+        .btn-danger-sm:hover { opacity:.92; }
         
-        .btn-icon {
-            color: var(--text-muted) !important;
-            @apply inline-flex items-center justify-center w-6 h-6 bg-transparent hover:bg-gray-600 rounded transition-colors;
-        }
+        .btn-icon { color: var(--text-muted) !important; display:inline-flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; background:transparent; border-radius:8px; transition: background-color .2s; }
+        .btn-icon:hover { background-color:#374151; }
         
-        .btn-copy {
-            background-color: var(--bg-card) !important;
-            border-color: var(--border-color) !important;
-            color: var(--accent-green) !important;
-            @apply inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border hover:bg-gray-600 transition-colors;
-        }
+        .btn-copy { background: var(--bg-primary) !important; border:1px solid var(--border-color) !important; color: var(--accent-green) !important; display:inline-flex; align-items:center; gap:.5rem; padding:.375rem .75rem; font-size:.75rem; font-weight:600; border-radius:8px; transition: background-color .2s, border-color .2s; }
+        .btn-copy:hover { background:#243041 !important; border-color:#3b4a61 !important; }
         
         .setting-input {
-            background-color: var(--bg-secondary) !important;
+            background-color: var(--bg-primary) !important;
             border: 1px solid var(--border-color) !important;
             color: var(--text-primary) !important;
-            @apply block w-full px-4 py-3 rounded-lg shadow-sm text-sm transition-all duration-200;
+            display:block; width:100%; padding:.625rem .875rem; border-radius: var(--radius-sm);
+            font-size:.875rem; line-height:1.4; box-shadow:none; transition: border-color .2s, box-shadow .2s, background-color .2s;
         }
         
-        .setting-input:focus {
-            outline: none !important;
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-            background-color: var(--bg-primary) !important;
-        }
+        .setting-input:focus { outline:none !important; border-color:#3b82f6 !important; box-shadow: var(--focus-ring) !important; background-color: #141c2a !important; }
         
-        .setting-input:hover:not(:focus):not(:disabled) {
-            border-color: #6b7280 !important;
-        }
+        .setting-input:hover:not(:focus):not(:disabled) { border-color: #3b4a61 !important; }
         
-        .setting-input:disabled {
-            background-color: var(--bg-primary) !important;
-            color: var(--text-muted) !important;
-            opacity: 0.6;
-            @apply cursor-not-allowed;
-        }
+        .setting-input:disabled { background-color:#182335 !important; color: var(--text-muted) !important; opacity:.6; cursor:not-allowed; }
         
         .setting-input::placeholder {
             color: var(--text-muted) !important;
         }
         
-        .wizard-input {
-            background-color: var(--bg-secondary) !important;
-            border: 1px solid var(--border-color) !important;
-            color: var(--text-primary) !important;
-            @apply block w-full px-4 py-3 rounded-lg shadow-sm text-sm transition-all duration-200;
-        }
+        .wizard-input { background-color: var(--bg-primary) !important; border:1px solid var(--border-color) !important; color: var(--text-primary) !important; display:block; width:100%; padding:.625rem .875rem; border-radius: var(--radius-sm); font-size:.875rem; line-height:1.4; transition: border-color .2s, box-shadow .2s, background-color .2s; }
         
-        .wizard-input:focus {
-            outline: none !important;
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-            background-color: var(--bg-primary) !important;
-        }
+        .wizard-input:focus { outline:none !important; border-color:#3b82f6 !important; box-shadow: var(--focus-ring) !important; background-color:#141c2a !important; }
         
-        .wizard-input:hover:not(:focus) {
-            border-color: #6b7280 !important;
-        }
+        .wizard-input:hover:not(:focus) { border-color:#3b4a61 !important; }
         
-        .wizard-input::placeholder {
-            color: var(--text-muted) !important;
-        }
+        .wizard-input::placeholder { color: var(--text-muted) !important; }
         
         /* Fix button icon and text alignment */
-        .btn-success, .btn-primary, .btn-danger, .btn-warning {
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
+        .btn-success, .btn-primary, .btn-danger, .btn-warning { align-items:center; justify-content:center; text-align:center; }
         
-        .btn-success svg, .btn-primary svg, .btn-danger svg, .btn-warning svg {
-            flex-shrink: 0;
-            margin-right: 0.5rem;
-        }
+        .btn-success svg, .btn-primary svg, .btn-danger svg, .btn-warning svg { flex-shrink:0; margin-right:.5rem; }
         
         /* Mobile Navigation Scrolling */
         .scrollbar-hide {
