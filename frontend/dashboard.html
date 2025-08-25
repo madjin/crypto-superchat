@@ -28,30 +28,42 @@
         
         /* Simple Dark Theme Variables */
         :root {
-            --bg-primary: #1f2937;    /* gray-800 */
-            --bg-secondary: #111827;  /* gray-900 */
-            --bg-card: #374151;       /* gray-700 */
-            --text-primary: #f9fafb;  /* gray-50 */
-            --text-secondary: #d1d5db; /* gray-300 */
-            --text-muted: #9ca3af;    /* gray-400 */
-            --border-color: #4b5563;  /* gray-600 */
-            --accent-blue: #3b82f6;   /* blue-500 */
+            --bg-secondary: #0f172a;  /* slate-900 */
+            --bg-primary:   #111827;  /* gray-900 */
+            --bg-card:      #1f2937;  /* gray-800 */
+            --bg-surface:   #0b1220;  /* deeper background */
+            --text-primary: #f8fafc;  /* slate-50 */
+            --text-secondary:#e5e7eb; /* gray-200 */
+            --text-muted:   #94a3b8;  /* slate-400 */
+            --border-color: #334155;  /* slate-700 */
+            --accent-blue:  #3b82f6;  /* blue-500 */
             --accent-green: #10b981;  /* emerald-500 */
-            --accent-red: #ef4444;    /* red-500 */
-            --accent-orange: #f97316; /* orange-500 */
+            --accent-red:   #ef4444;  /* red-500 */
+            --accent-orange:#f97316;  /* orange-500 */
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.3);
+            --shadow-lg: 0 16px 48px rgba(0,0,0,0.35);
+            --focus-ring: 0 0 0 3px rgba(59,130,246,0.25);
         }
         
         /* Global overrides for consistent dark theme */
         body {
             background-color: var(--bg-secondary) !important;
             color: var(--text-primary) !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            line-height: 1.5;
         }
         
         /* Card styling */
         .card {
-            background-color: var(--bg-primary) !important;
+            background-color: var(--bg-card) !important;
             border: 1px solid var(--border-color) !important;
             color: var(--text-primary) !important;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
         }
         
         /* Text overrides */
@@ -76,7 +88,14 @@
         
         /* Select arrow color fix */
         select {
-            background-image: url("data:image/svg+xml;charset=utf-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-color: var(--bg-primary) !important;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right .75rem center !important;
+            background-size: 1rem 1rem !important;
+            padding-right: 2.25rem !important;
+            border-radius: var(--radius-sm) !important;
         }
         
         /* Button styling */
@@ -95,25 +114,63 @@
             border-bottom: 1px solid var(--border-color) !important;
         }
         
+        /* Improved tooltips */
         .tooltip {
-            @apply invisible absolute z-50 text-xs rounded py-1 px-2 -mt-8 -ml-4;
+            @apply invisible absolute z-50 text-xs rounded-lg py-2 px-3 whitespace-nowrap;
             background-color: var(--bg-secondary) !important;
             color: var(--text-primary) !important;
             border: 1px solid var(--border-color) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            opacity: 0;
+            transition: all 0.2s ease-in-out;
+            min-width: 200px;
         }
+        
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: var(--bg-secondary);
+        }
+        
         .tooltip-trigger:hover .tooltip {
             @apply visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(-8px);
+        }
+        
+        /* Responsive tooltip positioning */
+        @media (max-width: 640px) {
+            .tooltip {
+                position: fixed;
+                bottom: auto;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                min-width: auto;
+                max-width: 280px;
+                text-align: center;
+            }
+            .tooltip::after {
+                display: none;
+            }
         }
     </style>
 </head>
 <body class="bg-gray-900 min-h-screen" x-data="dashboardApp()" x-init="init()">
     
     <!-- Setup Wizard Modal -->
-    <div x-show="showWizard" x-cloak class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-        <div class="bg-gray-800 text-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-700">
+    <div x-show="showWizard" x-cloak class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 text-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-y-auto border border-gray-700 flex flex-col">
             <div class="p-6 border-b border-gray-700">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-white">🚀 Welcome to Crypto Stream Overlay</h2>
+                    <h2 class="text-2xl font-bold text-white">Welcome to Crypto Stream Overlay</h2>
                     <button @click="completeWizard()" class="text-gray-400 hover:text-gray-200">
                         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
@@ -177,35 +234,29 @@
                     
                     <!-- Step 2: API & Wallet Configuration -->
                     <div x-show="wizardStep === 1" x-transition>
-                        <h3 class="text-xl font-semibold mb-4">Step 2: Connect Your Wallet & API</h3>
+                        <h3 class="text-xl font-semibold mb-6">Step 2: Connect Your Wallet & API</h3>
                         <div class="space-y-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-200 mb-2">
                                     Blockchain API Key
-                                    <div class="tooltip-trigger relative inline-block ml-1">
-                                        <span class="text-blue-500 cursor-help">ℹ️</span>
-                                        <div class="tooltip">Get this from your blockchain API provider (Helius, Alchemy, etc.)</div>
-                                    </div>
                                 </label>
                                 <input type="password" x-model="settings.apiKey" 
                                        class="wizard-input" 
                                        placeholder="Enter your API key"
                                        :class="wizardValidation.apiKey ? 'border-red-300' : ''">
+                                <p class="text-xs text-gray-400 mt-1">Get this from your blockchain API provider (Helius, Alchemy, etc.)</p>
                                 <p x-show="wizardValidation.apiKey" class="text-red-500 text-xs mt-1" x-text="wizardValidation.apiKey"></p>
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-200 mb-2">
                                     Your Wallet Address
-                                    <div class="tooltip-trigger relative inline-block ml-1">
-                                        <span class="text-blue-500 cursor-help">ℹ️</span>
-                                        <div class="tooltip">This is where viewers will send donations</div>
-                                    </div>
                                 </label>
                                 <input type="text" x-model="settings.walletAddress" 
                                        class="wizard-input" 
                                        placeholder="Enter your wallet address"
                                        :class="wizardValidation.walletAddress ? 'border-red-300' : ''">
+                                <p class="text-xs text-gray-400 mt-1">This is where viewers will send donations</p>
                                 <p x-show="wizardValidation.walletAddress" class="text-red-500 text-xs mt-1" x-text="wizardValidation.walletAddress"></p>
                             </div>
                             
@@ -267,7 +318,7 @@
                         <h3 class="text-xl font-semibold mb-4 text-white">Step 4: Set Donation Tiers</h3>
                         <p class="text-gray-300 mb-6">Set minimum amounts for different donation effects:</p>
                         
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <template x-for="tier in tiers" :key="tier.name">
                                 <div class="bg-gray-700 rounded-lg p-4">
                                     <div class="flex items-center space-x-3 mb-3">
@@ -352,44 +403,113 @@
         </div>
     </div>
 
-    <!-- Main Header -->
-    <header class="header-card">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <!-- Logo & Title -->
-                <div class="flex items-center space-x-4">
-                    <div class="text-2xl">💎</div>
-                    <div>
-                        <h1 class="text-xl font-bold">Crypto Stream Overlay</h1>
-                        <p class="text-sm text-gray-300">Universal donation overlay system</p>
+    <!-- Modern ShadCN-Style Header -->
+    <header class="sticky top-0 z-50 w-full border-b border-gray-800 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/60">
+        <div class="container mx-auto px-4">
+            <div class="flex h-16 items-center justify-between">
+                
+                <!-- Logo & Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+                        <span class="text-lg">💎</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <h1 class="text-lg font-semibold leading-tight">Crypto Stream</h1>
+                        <p class="text-xs text-gray-400 leading-tight">Donation Overlay</p>
                     </div>
                 </div>
-                
-                <!-- Navigation Tabs -->
-                <nav class="flex space-x-1 bg-gray-700 rounded-lg p-1">
+
+                <!-- Desktop Navigation -->
+                <nav class="hidden md:flex items-center space-x-1">
                     <template x-for="tab in tabs" :key="tab.id">
                         <button 
                             @click="activeTab = tab.id"
-                            :class="activeTab === tab.id ? 'bg-blue-500 text-white' : 'text-gray-300 hover:text-white'"
-                            class="px-4 py-2 text-sm font-medium rounded-md transition-colors"
-                            x-text="tab.icon + ' ' + tab.name">
+                            :class="activeTab === tab.id 
+                                ? 'bg-gray-800 text-white shadow-sm' 
+                                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'"
+                            class="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50">
+                            <span class="mr-2" x-text="tab.icon"></span>
+                            <span x-text="tab.name"></span>
                         </button>
                     </template>
                 </nav>
 
-                <!-- Status & Quick Actions -->
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <div :class="backendConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
-                        <span class="text-sm">Backend</span>
+                <!-- Desktop Status & Actions -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-1.5">
+                            <div :class="backendConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
+                            <span class="text-xs text-gray-400">Backend</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <div :class="overlayConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
+                            <span class="text-xs text-gray-400">Overlay</span>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <div :class="overlayConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
-                        <span class="text-sm">Overlay</span>
-                    </div>
-                    <button @click="showWizard = true" class="text-blue-400 hover:text-blue-300 text-sm font-medium">
-                        🚀 Setup Wizard
+                    <button @click="showWizard = true" 
+                            class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 h-9 px-3">
+                        Setup Wizard
                     </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden" x-data="{ mobileMenuOpen: false }">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen"
+                            class="inline-flex items-center justify-center whitespace-nowrap rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                    </button>
+
+                    <!-- Mobile Dropdown Menu -->
+                    <div x-show="mobileMenuOpen" 
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         @click.outside="mobileMenuOpen = false"
+                         class="absolute right-4 top-full mt-2 w-56 origin-top-right rounded-md border border-gray-700 bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5">
+                        <div class="py-1">
+                            <template x-for="tab in tabs" :key="tab.id">
+                                <button @click="activeTab = tab.id; mobileMenuOpen = false"
+                                        :class="activeTab === tab.id 
+                                            ? 'bg-gray-700 text-white' 
+                                            : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                                        class="group flex w-full items-center px-4 py-3 text-sm font-medium">
+                                    <span class="mr-3" x-text="tab.icon"></span>
+                                    <span x-text="tab.name"></span>
+                                </button>
+                            </template>
+                            <div class="border-t border-gray-700 mt-2 pt-2">
+                                <div class="px-4 py-2">
+                                    <div class="flex items-center justify-between text-xs text-gray-400 mb-2">
+                                        <span>Status</span>
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex items-center space-x-1.5">
+                                            <div :class="backendConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
+                                            <span class="text-xs">Backend</span>
+                                        </div>
+                                        <div class="flex items-center space-x-1.5">
+                                            <div :class="overlayConnected ? 'bg-green-400' : 'bg-red-400'" class="w-2 h-2 rounded-full"></div>
+                                            <span class="text-xs">Overlay</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button @click="showWizard = true; mobileMenuOpen = false"
+                                        class="group flex w-full items-center px-4 py-3 text-sm font-medium text-blue-400 hover:bg-gray-700">
+                                    <svg class="mr-3 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    Setup Wizard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -425,25 +545,12 @@
                         </div>
                         
                         <!-- Action Buttons -->
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <button @click="approveAll()" class="btn-success" :disabled="pendingCount === 0">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                 </svg>
                                 Approve All
-                            </button>
-                            <button @click="skipAll()" class="btn-danger" :disabled="pendingCount === 0">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                                Skip All
-                            </button>
-                            <button @click="clearEvents()" class="btn-warning">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 000 2h4a1 1 0 100-2H8z" clip-rule="evenodd"></path>
-                                </svg>
-                                Clear Queue
                             </button>
                             <button @click="refreshData()" class="btn-primary">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -587,10 +694,10 @@
                             <h2 class="text-lg font-semibold">⚙️ Configuration Management</h2>
                         </div>
                         <div class="p-6">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div class="relative">
                                     <input type="file" @change="importSettings($event)" accept=".json" class="hidden" id="import-settings">
-                                    <label for="import-settings" class="btn-secondary w-full cursor-pointer">
+                                    <label for="import-settings" class="btn-secondary w-full cursor-pointer justify-center">
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
                                         </svg>
@@ -603,11 +710,13 @@
                                     </svg>
                                     Export Settings
                                 </button>
-                                <button @click="resetToDefaults()" class="btn-warning">
+                            </div>
+                            <div class="mt-4">
+                                <button @click="resetToDefaults()" class="btn-warning w-full sm:w-auto">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
                                     </svg>
-                                    Reset Defaults
+                                    Reset to Defaults
                                 </button>
                             </div>
                             <div class="mt-6 p-4 bg-gray-700 border border-gray-600 rounded-lg">
@@ -641,12 +750,8 @@
 
                         <!-- API Key -->
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">
+                            <label class="block text-sm font-medium text-gray-200">
                                 API Key
-                                <div class="tooltip-trigger relative inline-block ml-1">
-                                    <span class="text-blue-500 cursor-help">ℹ️</span>
-                                    <div class="tooltip">Get this from your blockchain API provider</div>
-                                </div>
                             </label>
                             <div class="relative">
                                 <input 
@@ -682,6 +787,7 @@
                                     </button>
                                 </div>
                             </div>
+                            <p class="text-xs text-gray-400 mt-1">Get this from your blockchain API provider (Helius, Alchemy, etc.)</p>
                         </div>
 
                         <!-- Wallet Address -->
@@ -711,6 +817,7 @@
                                     </button>
                                 </div>
                             </div>
+                            <p class="text-xs text-gray-400 mt-1">This is where viewers will send donations</p>
                         </div>
 
                         <!-- Custom Token Address (if custom selected) -->
@@ -849,7 +956,12 @@
         </div>
 
         <!-- Overlay Tab -->
-        <div x-show="activeTab === 'overlay'" x-transition:enter="animate-fade-in">
+        <div x-show="false" x-transition:enter="animate-fade-in" class="space-y-6">
+            <!-- Debug: Overlay Tab Active -->
+            <div class="bg-blue-500 text-white p-2 rounded" x-show="false">
+                Overlay tab is active! Debug: <span x-text="activeTab"></span>
+            </div>
+            
             <div class="card rounded-xl shadow-lg overflow-hidden h-[70vh]">
                 <div class="px-6 py-4 border-b border-gray-600">
                     <div class="flex items-center justify-between">
@@ -875,35 +987,39 @@
         </div>
 
         <!-- Help Tab -->
-        <div x-show="activeTab === 'help'" x-transition:enter="animate-fade-in">
-            <div class="space-y-8">
-                <!-- Quick Start Guide -->
-                <div class="card rounded-xl shadow-lg overflow-hidden">
-                    <div class="px-6 py-4 bg-gradient-to-r from-green-500 to-teal-600">
+        <div x-show="false" x-transition:enter="animate-fade-in" class="space-y-8">
+            <!-- Debug: Help Tab Active -->
+            <div class="bg-green-500 text-white p-2 rounded" x-show="false">
+                Help tab is active! Debug: <span x-text="activeTab"></span>
+            </div>
+            
+            <!-- Quick Start Guide -->
+            <div class="card rounded-xl shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-600">
                         <h2 class="text-lg font-semibold text-white">🚀 Quick Start Guide</h2>
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div class="text-center">
-                                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div class="w-16 h-16 bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <span class="text-2xl">⚙️</span>
                                 </div>
-                                <h3 class="font-semibold mb-2">1. Configure Settings</h3>
-                                <p class="text-sm text-gray-600">Set up your API key, wallet address, and customize your overlay appearance.</p>
+                                <h3 class="font-semibold mb-2 text-white">1. Configure Settings</h3>
+                                <p class="text-sm text-gray-300">Set up your API key, wallet address, and customize your overlay appearance.</p>
                             </div>
                             <div class="text-center">
-                                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div class="w-16 h-16 bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <span class="text-2xl">🔗</span>
                                 </div>
-                                <h3 class="font-semibold mb-2">2. Add to OBS</h3>
-                                <p class="text-sm text-gray-600">Copy the overlay URL and add it as a Browser Source in your streaming software.</p>
+                                <h3 class="font-semibold mb-2 text-white">2. Add to OBS</h3>
+                                <p class="text-sm text-gray-300">Copy the overlay URL and add it as a Browser Source in your streaming software.</p>
                             </div>
                             <div class="text-center">
-                                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div class="w-16 h-16 bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <span class="text-2xl">🎉</span>
                                 </div>
-                                <h3 class="font-semibold mb-2">3. Start Streaming</h3>
-                                <p class="text-sm text-gray-600">Share your wallet address with viewers and watch donations appear live!</p>
+                                <h3 class="font-semibold mb-2 text-white">3. Start Streaming</h3>
+                                <p class="text-sm text-gray-300">Share your wallet address with viewers and watch donations appear live!</p>
                             </div>
                         </div>
                     </div>
@@ -916,9 +1032,9 @@
                     </div>
                     <div class="p-6 space-y-6">
                         <template x-for="faq in faqData" :key="faq.question">
-                            <div class="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
+                            <div class="border-b border-gray-600 pb-6 last:border-b-0 last:pb-0">
                                 <h3 class="font-semibold text-gray-200 mb-2" x-text="faq.question"></h3>
-                                <p class="text-gray-600 text-sm" x-html="faq.answer"></p>
+                                <p class="text-gray-300 text-sm" x-html="faq.answer"></p>
                             </div>
                         </template>
                     </div>
@@ -956,10 +1072,9 @@
                 // Configuration
                 tabs: [
                     { id: 'dashboard', name: 'Dashboard', icon: '🎛️' },
-                    { id: 'settings', name: 'Settings', icon: '⚙️' },
-                    { id: 'overlay', name: 'Preview', icon: '👁️' },
-                    { id: 'help', name: 'Help', icon: '❓' }
+                    { id: 'settings', name: 'Settings', icon: '⚙️' }
                 ],
+                
                 
                 // Token presets (will be loaded from backend)
                 tokenPresets: [],
@@ -1385,31 +1500,6 @@
                     }
                 },
 
-                async skipAll() {
-                    if (this.pendingEvents.length === 0) return;
-                    if (!confirm(`Skip all ${this.pendingEvents.length} pending donations?`)) return;
-                    
-                    for (const event of this.pendingEvents) {
-                        await this.moderateEvent(event.id, 'skip');
-                    }
-                },
-
-                async clearEvents() {
-                    if (!confirm('Clear all events? This cannot be undone.')) return;
-                    
-                    try {
-                        const response = await fetch('http://localhost:8000/api/events', {
-                            method: 'DELETE'
-                        });
-                        
-                        if (response.ok) {
-                            this.showToast('All events cleared', 'success');
-                        }
-                    } catch (error) {
-                        this.showToast('Error clearing events', 'error');
-                    }
-                },
-
                 async refreshData() {
                     await this.loadInitialData();
                     this.showToast('Data refreshed', 'success');
@@ -1509,17 +1599,6 @@
                     return preset ? preset.network : 'Custom';
                 },
 
-                generateOverlayUrl() {
-                    const params = new URLSearchParams({
-                        token: this.settings.tokenSymbol,
-                        position: this.settings.position,
-                        duration: this.settings.displayDuration * 1000,
-                        theme: this.settings.theme,
-                        host: 'localhost',
-                        port: '8000'
-                    });
-                    return `${window.location.origin}/overlay.html?${params.toString()}`;
-                },
 
                 copyOverlayUrl() {
                     this.copyToClipboard(this.generateOverlayUrl(), 'Overlay URL');
@@ -1571,6 +1650,37 @@
                         }, '*');
                         console.log('Sent config update to overlay preview:', config);
                     }
+                },
+
+                generateOverlayUrl() {
+                    const protocol = window.location.protocol;
+                    const host = window.location.hostname;
+                    const port = window.location.port ? `:${window.location.port}` : '';
+                    const baseUrl = `${protocol}//${host}${port}`;
+                    
+                    const params = new URLSearchParams();
+                    params.set('host', 'localhost');
+                    params.set('port', '8765');
+                    
+                    if (this.settings.tokenSymbol) {
+                        params.set('token', this.settings.tokenSymbol);
+                    }
+                    
+                    return `${baseUrl}/overlay.html?${params.toString()}`;
+                },
+
+                copyOverlayUrl() {
+                    const url = this.generateOverlayUrl();
+                    navigator.clipboard.writeText(url).then(() => {
+                        this.showToast('Overlay URL copied to clipboard!', 'success');
+                    }).catch(() => {
+                        this.showToast('Failed to copy URL', 'error');
+                    });
+                },
+
+                openOverlayPreview() {
+                    const url = this.generateOverlayUrl() + '&demo=true';
+                    window.open(url, '_blank', 'width=800,height=600');
                 },
 
                 // Watch for setting changes and update preview immediately
@@ -1628,79 +1738,201 @@
     
     <!-- Custom button and form styles -->
     <style>
-        .btn-primary {
-            background-color: var(--accent-blue) !important;
-            color: white !important;
-            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+        /* Card header normalization */
+        .card > .px-6.py-4 {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border-color);
         }
         
-        .btn-secondary {
-            background-color: var(--bg-card) !important;
-            border-color: var(--border-color) !important;
-            color: var(--text-primary) !important;
-            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors;
+        /* Buttons */
+        .btn-primary {
+            background-color: var(--accent-blue) !important;
+            color: #fff !important;
+            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+            padding: .5rem 1rem; font-size: .875rem; font-weight: 600; border-radius: var(--radius-sm);
+            border: 1px solid transparent; transition: background-color .2s, box-shadow .2s, opacity .2s;
         }
+        .btn-primary:hover { opacity: .92; }
+        .btn-primary:focus { outline: none; box-shadow: var(--focus-ring); }
+        .btn-primary:disabled { opacity:.6; cursor:not-allowed; }
+        
+        .btn-secondary {
+            background-color: var(--bg-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-secondary) !important;
+            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+            padding: .5rem 1rem; font-size: .875rem; font-weight: 600; border-radius: var(--radius-sm);
+            transition: background-color .2s, border-color .2s, box-shadow .2s;
+        }
+        .btn-secondary:hover { background-color: #243041 !important; border-color: #3b4a61 !important; }
+        .btn-secondary:focus { outline: none; box-shadow: var(--focus-ring); }
         
         .btn-success {
             background-color: var(--accent-green) !important;
-            color: white !important;
-            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+            color: #fff !important;
+            display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+            padding:.5rem 1rem; font-size:.875rem; font-weight:600; border-radius:var(--radius-sm);
+            border:1px solid transparent; transition: background-color .2s, box-shadow .2s, opacity .2s;
         }
+        .btn-success:hover { opacity:.92; }
+        .btn-success:focus { outline:none; box-shadow: var(--focus-ring);}
         
         .btn-danger {
             background-color: var(--accent-red) !important;
-            color: white !important;
-            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+            color:#fff !important;
+            display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+            padding:.5rem 1rem; font-size:.875rem; font-weight:600; border-radius:var(--radius-sm);
+            border:1px solid transparent; transition: background-color .2s, box-shadow .2s, opacity .2s;
         }
+        .btn-danger:hover { opacity:.92; }
+        .btn-danger:focus { outline:none; box-shadow: var(--focus-ring);}
         
         .btn-warning {
             background-color: var(--accent-orange) !important;
-            color: white !important;
-            @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-transparent hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-colors;
+            color:#fff !important;
+            display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+            padding:.5rem 1rem; font-size:.875rem; font-weight:600; border-radius:var(--radius-sm);
+            border:1px solid transparent; transition: background-color .2s, box-shadow .2s, opacity .2s;
         }
+        .btn-warning:hover { opacity:.92; }
+        .btn-warning:focus { outline:none; box-shadow: var(--focus-ring);}
         
-        .btn-success-sm {
-            background-color: var(--accent-green) !important;
-            color: white !important;
-            @apply inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded hover:opacity-90 transition-colors;
-        }
+        .btn-success-sm { background-color: var(--accent-green) !important; color:#fff !important; display:inline-flex; align-items:center; gap:.25rem; padding:.375rem .75rem; font-size:.75rem; font-weight:600; border-radius:8px; transition: opacity .2s; }
+        .btn-success-sm:hover { opacity:.92; }
         
-        .btn-danger-sm {
-            background-color: var(--accent-red) !important;
-            color: white !important;
-            @apply inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded hover:opacity-90 transition-colors;
-        }
+        .btn-danger-sm { background-color: var(--accent-red) !important; color:#fff !important; display:inline-flex; align-items:center; gap:.25rem; padding:.375rem .75rem; font-size:.75rem; font-weight:600; border-radius:8px; transition: opacity .2s; }
+        .btn-danger-sm:hover { opacity:.92; }
         
-        .btn-icon {
-            color: var(--text-muted) !important;
-            @apply inline-flex items-center justify-center w-6 h-6 bg-transparent hover:bg-gray-600 rounded transition-colors;
-        }
+        .btn-icon { color: var(--text-muted) !important; display:inline-flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; background:transparent; border-radius:8px; transition: background-color .2s; }
+        .btn-icon:hover { background-color:#374151; }
         
-        .btn-copy {
-            background-color: var(--bg-card) !important;
-            border-color: var(--border-color) !important;
-            color: var(--accent-green) !important;
-            @apply inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border hover:bg-gray-600 transition-colors;
-        }
+        .btn-copy { background: var(--bg-primary) !important; border:1px solid var(--border-color) !important; color: var(--accent-green) !important; display:inline-flex; align-items:center; gap:.5rem; padding:.375rem .75rem; font-size:.75rem; font-weight:600; border-radius:8px; transition: background-color .2s, border-color .2s; }
+        .btn-copy:hover { background:#243041 !important; border-color:#3b4a61 !important; }
         
         .setting-input {
-            background-color: var(--bg-card) !important;
-            border-color: var(--border-color) !important;
-            color: var(--text-primary) !important;
-            @apply block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm;
-        }
-        
-        .setting-input:disabled {
             background-color: var(--bg-primary) !important;
-            color: var(--text-muted) !important;
-            @apply cursor-not-allowed;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+            display:block; width:100%; padding:.625rem .875rem; border-radius: var(--radius-sm);
+            font-size:.875rem; line-height:1.4; box-shadow:none; transition: border-color .2s, box-shadow .2s, background-color .2s;
         }
         
-        .wizard-input {
-            background-color: var(--bg-card) !important;
-            border-color: var(--border-color) !important;
-            color: var(--text-primary) !important;
-            @apply block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm transition-colors;
+        .setting-input:focus { outline:none !important; border-color:#3b82f6 !important; box-shadow: var(--focus-ring) !important; background-color: #141c2a !important; }
+        
+        .setting-input:hover:not(:focus):not(:disabled) { border-color: #3b4a61 !important; }
+        
+        .setting-input:disabled { background-color:#182335 !important; color: var(--text-muted) !important; opacity:.6; cursor:not-allowed; }
+        
+        .setting-input::placeholder {
+            color: var(--text-muted) !important;
+        }
+        
+        .wizard-input { background-color: var(--bg-primary) !important; border:1px solid var(--border-color) !important; color: var(--text-primary) !important; display:block; width:100%; padding:.625rem .875rem; border-radius: var(--radius-sm); font-size:.875rem; line-height:1.4; transition: border-color .2s, box-shadow .2s, background-color .2s; }
+        
+        .wizard-input:focus { outline:none !important; border-color:#3b82f6 !important; box-shadow: var(--focus-ring) !important; background-color:#141c2a !important; }
+        
+        .wizard-input:hover:not(:focus) { border-color:#3b4a61 !important; }
+        
+        .wizard-input::placeholder { color: var(--text-muted) !important; }
+        
+        /* Fix button icon and text alignment */
+        .btn-success, .btn-primary, .btn-danger, .btn-warning { align-items:center; justify-content:center; text-align:center; }
+        
+        .btn-success svg, .btn-primary svg, .btn-danger svg, .btn-warning svg { flex-shrink:0; margin-right:.5rem; }
+        
+        /* Mobile Navigation Scrolling */
+        .scrollbar-hide {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            /* Touch-friendly navigation */
+            .nav-tab-mobile {
+                touch-action: manipulation;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            /* Button touch targets */
+            .btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-warning {
+                min-height: 44px;
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
+            }
+            
+            .btn-copy {
+                min-height: 36px;
+                padding: 0.5rem 0.75rem;
+            }
+            
+            /* Card spacing */
+            .card .px-6 { 
+                padding-left: 1rem; 
+                padding-right: 1rem; 
+            }
+            
+            .card .py-4 { 
+                padding-top: 0.75rem; 
+                padding-bottom: 0.75rem; 
+            }
+            
+            /* Form inputs */
+            .wizard-input {
+                padding: 1rem;
+                font-size: 1rem; /* Prevent zoom on iOS */
+            }
+        }
+        
+        @media (max-width: 640px) {
+            /* Typography scaling */
+            h1 { font-size: 1.125rem; }
+            h2 { font-size: 1rem; }
+            h3 { font-size: 0.875rem; }
+            
+            /* Stack wizard buttons vertically on small screens */
+            .wizard-buttons {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .wizard-buttons button {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            /* Better mobile spacing */
+            .space-y-8 > :not(:first-child) {
+                margin-top: 1.5rem;
+            }
+            
+            .gap-8 {
+                gap: 1.5rem;
+            }
+        }
+        
+        /* Tablet specific optimizations */
+        @media (min-width: 640px) and (max-width: 1024px) {
+            /* Adjust grid layouts for tablet */
+            .grid-cols-1.lg\\:grid-cols-2 {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+            
+            @media (min-width: 768px) {
+                .grid-cols-1.lg\\:grid-cols-2 {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
         }
     </style>
 </body>

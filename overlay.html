@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Redirecting to Overlay…</title>
+    <script>
+        (function () {
+            var q = window.location.search || '';
+            var target = 'frontend/overlay.html' + q;
+            try { window.location.replace(target); } catch (_) { window.location.href = target; }
+        })();
+    </script>
+</head>
+<body>
+    Redirecting to overlay… If not redirected, <a id="link" href="frontend/overlay.html">click here</a>.
+    <script>
+        document.getElementById('link').href = 'frontend/overlay.html' + (window.location.search || '');
+    </script>
+</body>
+</html> 
